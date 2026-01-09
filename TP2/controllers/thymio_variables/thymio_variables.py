@@ -31,10 +31,10 @@ timestep = int(robot.getBasicTimeStep())
 keyboard = robot.getKeyboard()
 keyboard.enable(timestep)
 robot_speed = 0.0
+MAX_SPEED = 8
+e = 54 # mm
 
-speed_left = 0.0
-speed_right = 0.0
-direction = "up"
+wheel_radius = 21 # mm
 
 print(chr(27) + "[2J")  # ANSI code for clearing command line
 print("Initialization of thymio_variables controller")
@@ -44,6 +44,27 @@ motor_right = robot.getDevice("motor.right")
 motor_left.setPosition(float("inf"))
 motor_right.setPosition(float("inf"))
 
+x_right = 0
+x_left = 0
+Xk = [0, 0, 0]
+
+def update_localisation():
+    global x_left, x_right
+    dleft = motor_left.getVelocity() * timestep * wheel_radius * 1e-3
+    x_left += dleft
+    dright = motor_right.getVelocity() * timestep * wheel_radius * 1e-3
+    x_right += dright
+
+    # print(f"Deplacement depuis dernier timestep roue droite: {dright} roue gauche: {dleft}")
+    # print(f"Deplacement total roue droite: {x_right} mm roue gauche: {x_left} mm")
+
+    ds = (dleft + dright) / 2
+    dtheta = (dleft - dright) / (2 * e)
+    Xk[0] += ds * math.cos(Xk[2] + dtheta / 2)
+    Xk[1] += ds * math.sin(Xk[2] + dtheta / 2)
+    Xk[2] += dtheta
+
+    print(Xk)
 
 
 while robot.step(timestep) != -1:
@@ -51,23 +72,26 @@ while robot.step(timestep) != -1:
     command = keyboard.getKey()
     if command == keyboard.LEFT:
         # print('Left')
-        motor_left.setVelocity(-robot_speed)
-        motor_right.setVelocity(robot_speed)
+        motor_left.setVelocity(-2)
+        motor_right.setVelocity(2)
     elif command == keyboard.RIGHT:
         # print('right')
-        motor_left.setVelocity(robot_speed)
-        motor_right.setVelocity(-robot_speed)
+        motor_left.setVelocity(2)
+        motor_right.setVelocity(-2)
     else:
         if command == keyboard.UP:
             print("up")
-            if robot_speed < 2:
-                robot_speed += 0.2
+            if robot_speed < MAX_SPEED:
+                robot_speed += 0.1
         elif command == keyboard.DOWN:
             print("down")
             if robot_speed > -2:
-                robot_speed -= 0.2
+                robot_speed -= 0.1
         elif command == 83:  # capture S key
             print("stop")
             robot_speed = 0
         motor_left.setVelocity(robot_speed)
         motor_right.setVelocity(robot_speed)
+
+    update_localisation()
+ 
