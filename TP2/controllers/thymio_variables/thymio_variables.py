@@ -51,6 +51,19 @@ x_right = 0
 x_left = 0
 Xk = [149.1, -157.4, -2.63059]
 dest = [157.4, -607.8]
+path = [
+    [157.4, -607.8],
+    [-467.47, -627.27],
+    [-468.02, -380],
+    [-50, -400],
+    [-060.50, 046.22],
+    [-070.10, 585.88],
+    [106.17, 599.60],
+    [160.95, 170.76],
+    [543.82, 129.62],
+    [557.74, -067.46],
+    [178.06, -136.92],
+]
 DRAW = False
 
 list_pos_x = []
@@ -161,22 +174,26 @@ def chgmt_base(p):
 
 def compute_move(p):
     """p: point dans le repere du robot"""
-    #signe = 1 if p[1] > 0 else -1
     trans = math.sqrt(p[0] ** 2 + p[1] ** 2)
     rot = math.atan(p[1] / p[0])
     if p[0] < 0:
-        rot = math.pi - rot
+        rot = angle_principal(math.pi + rot)
     return (rot, trans)
 
 
 def goto_rot_trans(rot, trans):
     theta_obj = Xk[2] + rot
     speed = 1 if rot > 0 else -1
-    while abs(Xk[2] - theta_obj) > 0.001:
+    error = abs(angle_principal(Xk[2] - theta_obj))
+    old_error = error + 1
+    while error <= old_error:
         motor_left.setVelocity(-speed)
         motor_right.setVelocity(speed)
         update_pos()
         robot.step(timestep)
+        old_error = error
+        error = abs(angle_principal(Xk[2] - theta_obj))
+        # print(error, old_error)
 
     d = 0
     while abs(trans - d) > 1:
@@ -206,8 +223,12 @@ def goto(p):
     goto_rot_trans(rot, trans)
 
 
+while True:
+    for p in path:
+        print("Point cible :", p)
+        goto(p)
+
 while robot.step(timestep) != -1:
-    goto(dest)
     ## Controle clavier ##
     command = keyboard.getKey()
     if command == keyboard.LEFT:
@@ -224,15 +245,12 @@ while robot.step(timestep) != -1:
             robot_speed *= 0.99
     else:
         if command == keyboard.UP:
-            print("up")
             if robot_speed < MAX_SPEED:
                 robot_speed += 0.1
         elif command == keyboard.DOWN:
-            print("down")
             if robot_speed > -2:
                 robot_speed -= 0.1
         elif command == 83:  # capture S key
-            print("stop")
             robot_speed = 0
         motor_left.setVelocity(robot_speed)
         motor_right.setVelocity(robot_speed)
@@ -246,5 +264,4 @@ while robot.step(timestep) != -1:
         if DRAW:
             draw_pos()
         c = 0
-    print(chgmt_base(dest))
     c += 1
