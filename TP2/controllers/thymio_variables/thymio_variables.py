@@ -109,6 +109,7 @@ def draw_comp():
     print()
     fig.savefig("composantes.png")
 
+
 def angle_principal(theta):
     while theta > math.pi:
         theta -= 2 * math.pi
@@ -179,7 +180,7 @@ while robot.step(timestep) != -1:
         motor_left.setVelocity(robot_speed)
         motor_right.setVelocity(robot_speed)
 
-    if command == 84:
+    if command == ord("G"):
         draw_comp()
     update_pos()
     if c == 100:
