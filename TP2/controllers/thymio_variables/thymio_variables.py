@@ -26,6 +26,7 @@ import math
 import matplotlib.pyplot as plt
 
 from controller import Supervisor
+import time
 
 robot = Supervisor()
 node = robot.getFromDef("thymio")
@@ -158,9 +159,55 @@ def chgmt_base(p):
     ]
 
 
+def compute_move(p):
+    """p: point dans le repere du robot"""
+    #signe = 1 if p[1] > 0 else -1
+    trans = math.sqrt(p[0] ** 2 + p[1] ** 2)
+    rot = math.atan(p[1] / p[0])
+    if p[0] < 0:
+        rot = math.pi - rot
+    return (rot, trans)
+
+
+def goto_rot_trans(rot, trans):
+    theta_obj = Xk[2] + rot
+    speed = 1 if rot > 0 else -1
+    while abs(Xk[2] - theta_obj) > 0.001:
+        motor_left.setVelocity(-speed)
+        motor_right.setVelocity(speed)
+        update_pos()
+        robot.step(timestep)
+
+    d = 0
+    while abs(trans - d) > 1:
+        motor_left.setVelocity(2)
+        motor_right.setVelocity(2)
+        dx = (
+            (motor_right.getVelocity() + motor_left.getVelocity())
+            * timestep
+            * wheel_radius
+            * 0.5e-3
+        )
+        d += dx
+        update_pos()
+        robot.step(timestep)
+    motor_left.setVelocity(0)
+    motor_right.setVelocity(0)
+
+
 c = 0
 
+
+def goto(p):
+    dest = chgmt_base(p)
+    print("Point dans la base du robot :", dest)
+    rot, trans = compute_move(dest)
+    print(f"Mouvement a effectuer rotation : {rot}, translation : {trans}")
+    goto_rot_trans(rot, trans)
+
+
 while robot.step(timestep) != -1:
+    goto(dest)
     ## Controle clavier ##
     command = keyboard.getKey()
     if command == keyboard.LEFT:
