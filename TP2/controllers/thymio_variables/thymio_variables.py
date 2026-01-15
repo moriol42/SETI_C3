@@ -49,6 +49,8 @@ motor_right.setPosition(float("inf"))
 x_right = 0
 x_left = 0
 Xk = [149.1, -157.4, -2.63059]
+dest = [157.4, -607.8]
+DRAW = False
 
 list_pos_x = []
 list_pos_y = []
@@ -148,6 +150,14 @@ def update_pos():
     list_theta_sim.append(math.atan2(rotation[3], rotation[0]))
 
 
+def chgmt_base(p):
+    theta = Xk[2]
+    return [
+        math.cos(theta) * (p[0] - Xk[0]) + math.sin(theta) * (p[1] - Xk[1]),
+        -math.sin(theta) * (p[0] - Xk[0]) + math.cos(theta) * (p[1] - Xk[1]),
+    ]
+
+
 c = 0
 
 while robot.step(timestep) != -1:
@@ -182,8 +192,12 @@ while robot.step(timestep) != -1:
 
     if command == ord("G"):
         draw_comp()
+    elif command == ord("P"):
+        print(node.getPosition())
     update_pos()
     if c == 100:
-        draw_pos()
+        if DRAW:
+            draw_pos()
         c = 0
+    print(chgmt_base(dest))
     c += 1
