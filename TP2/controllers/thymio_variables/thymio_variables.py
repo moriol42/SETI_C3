@@ -77,6 +77,7 @@ list_theta_sim = []
 
 
 def draw_pos():
+    """Affiche les positions calculee via l'odometrie et reele du robot"""
     plt.ion()
     plt.plot(list_pos_x, list_pos_y)
     plt.plot(list_pos_x_sim, list_pos_y_sim)
@@ -137,6 +138,7 @@ def angle_principal(theta):
 
 
 def update_pos():
+    """This function update the compiuted position of the robot it must be called once every step"""
     global x_left, x_right
     dleft = motor_left.getVelocity() * timestep * wheel_radius * 1e-3
     x_left += dleft
@@ -193,7 +195,6 @@ def goto_rot_trans(rot, trans):
         robot.step(timestep)
         old_error = error
         error = abs(angle_principal(Xk[2] - theta_obj))
-        # print(error, old_error)
 
     d = 0
     while abs(trans - d) > 1:
