@@ -24,6 +24,8 @@ message through an emitter or handle the position of Robot1.
 
 import math
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.transforms import Affine2D
 
 from controller import Supervisor
 import numpy as np
@@ -62,17 +64,77 @@ def get_point_cloud():
         angle += 2 * math.pi / HORZ_RES
     return point_cloud_xy
 
+
+# wall from webots config
+walls = [
+    {'translation': (-0.16, 0.23, 0), 'size': (0.01, 1, 0.1)},
+    {'translation': (0.05, 0.73, 0), 'size': (0.43, 0.01, 0.1), 'name': 'wall(12)'},
+    {'translation': (0.25, 0, 0), 'size': (0.4, 0.01, 0.1), 'name': 'wall(5)'},
+    {'translation': (0.0732246, -0.0387871, 0), 'rotation': 0.785398, 'size': (0.1, 0.01, 0.1), 'name': 'wall(1)'},
+    {'translation': (0.631834, -0.215563, 0), 'rotation': 0.785398, 'size': (0.1, 0.01, 0.1), 'name': 'wall(21)'},
+    {'translation': (0.0732248, 0.0319252, 0), 'rotation': 2.35619, 'size': (0.1, 0.01, 0.1), 'name': 'wall(11)'},
+    {'translation': (0.631834, 0.2087, 0), 'rotation': 2.35619, 'size': (0.1, 0.01, 0.1), 'name': 'wall(22)'},
+    {'translation': (0.242929, 0.696599, 0), 'rotation': 2.35619, 'size': (0.1, 0.01, 0.1), 'name': 'wall(20)'},
+    {'translation': (-0.124765, 0.696599, 0), 'rotation': 0.785398, 'size': (0.1, 0.01, 0.1), 'name': 'wall(10)'},
+    {'translation': (0.214645, -0.717604, 0), 'rotation': -2.3561953071795863, 'size': (0.1, 0.01, 0.1), 'name': 'wall(2)'},
+    {'translation': (0.00251402, -0.47719, 0), 'rotation': -2.3561953071795863, 'size': (0.1, 0.01, 0.1), 'name': 'wall(4)'},
+    {'translation': (-0.612664, -0.314557, 0), 'rotation': -2.3561953071795863, 'size': (0.1, 0.01, 0.1), 'name': 'wall(9)'},
+    {'translation': (-0.612664, -0.710533, 0), 'rotation': 2.35619, 'size': (0.1, 0.01, 0.1), 'name': 'wall(3)'},
+    {'translation': (-0.4, -0.27, 0), 'size': (0.49, 0.01, 0.1), 'name': 'wall(8)'},
+    {'translation': (-0.16, -0.51, 0), 'size': (0.4, 0.01, 0.1), 'name': 'wall(7)'},
+    {'translation': (0.46, -0.25, 0), 'size': (0.43, 0.01, 0.1), 'name': 'wall(15)'},
+    {'translation': (-0.2, -0.75, 0), 'size': (0.9, 0.01, 0.1), 'name': 'wall(18)'},
+    {'translation': (0.47, 0.25, 0), 'size': (0.4, 0.01, 0.1), 'name': 'wall(14)'},
+    {'translation': (0.04, -0.01, 0), 'size': (0.01, 1, 0.1), 'name': 'wall(17)'},
+    {'translation': (0.25, -0.5, 0), 'size': (0.01, 0.5, 0.1), 'name': 'wall(16)'},
+    {'translation': (-0.65, -0.5, 0), 'size': (0.01, 0.5, 0.1), 'name': 'wall(19)'},
+    {'translation': (0.27, 0.49, 0), 'size': (0.01, 0.48, 0.1), 'name': 'wall(13)'},
+    {'translation': (0.67, 0, 0), 'size': (0.01, 0.5, 0.1), 'name': 'wall(6)'},
+]
+
 def draw_point_cloud(pc):
     """Affiche le nuage de points du lidar"""
     plt.ion()
+    # create persistent figure/axes on first call
+    if not hasattr(draw_point_cloud, 'fig_ax') or draw_point_cloud.fig_ax is None:
+        fig, ax = plt.subplots(1, 2)
+        draw_point_cloud.fig_ax = (fig, ax)
+        plt.show(block=False)
+    else:
+        fig, ax = draw_point_cloud.fig_ax
+
     x = pc[:, 0]
     y = pc[:, 1]
-    plt.scatter(x, y)
+
+    # Draw point cloud
+    ax[0].cla()
+    ax[0].scatter(x, y, s=2)
+    ax[0].set_title('Lidar point cloud')
+    ax[0].set_aspect('equal')
+
+    # Draw walls
+    ax[1].cla()
+    for w in walls:
+        tx, ty, _ = w['translation']
+        sx, sy, _ = w['size']
+        angle = w.get('rotation', 0)
+        rect = patches.Rectangle((-sx / 2, -sy / 2), sx, sy, linewidth=1, edgecolor='black', facecolor='gray', alpha=0.7)
+        transform = Affine2D().rotate(angle).translate(tx, ty) + ax[1].transData
+        rect.set_transform(transform)
+        ax[1].add_patch(rect)
+        if 'name' in w:
+            ax[1].text(tx, ty, w['name'], fontsize=6, ha='center', va='center')
+
+    ax[1].set_aspect('equal')
+    ax[1].set_xlabel('x (m)')
+    ax[1].set_ylabel('y (m)')
+    ax[1].grid(True)
+    ax[1].relim()
+    ax[1].autoscale_view()
+
     plt.tight_layout()
-    plt.axis('scaled')
-    plt.draw()
+    fig.canvas.draw_idle()
     plt.pause(0.01)
-    plt.clf()
 
 c = 0
 
@@ -80,6 +142,7 @@ while robot.step(timestep) != -1:
     ## Lidar ##
     point_cloud = get_point_cloud()
     if c == 100:
+        #draw_point_cloud(point_cloud)
         draw_point_cloud(point_cloud)
         c = 0
     c += 1
