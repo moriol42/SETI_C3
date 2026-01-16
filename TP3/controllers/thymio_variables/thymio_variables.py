@@ -66,17 +66,35 @@ def multmatr(X, Y, T):
     return res
 
 
+def base_robot2main(p):
+    """Changement de base du robot vers la base principal de la scene"""
+    xyz = node.getPosition()
+    rotation = node.getOrientation()
+    theta = -math.atan2(rotation[3], rotation[0]) + math.pi / 2
+    return np.array(
+        [
+            math.cos(theta) * p[0] + math.sin(theta) * p[1] + xyz[0],
+            -math.sin(theta) * p[0] + math.cos(theta) * p[1] + xyz[1],
+        ]
+    )
+
+
 def get_point_cloud():
     point_cloud = lidar.getRangeImage()
-    rotation = node.getOrientation()
-    xyz = node.getPosition()
-    angle = 0
-    point_cloud_xy = np.zeros((len(point_cloud), 3))
+    # rotation = node.getOrientation()
+    # xyz = node.getPosition()
+    angle = math.pi
+    point_cloud_xy_main = np.zeros((len(point_cloud), 2))
+    point_cloud_xy_robot = np.zeros((len(point_cloud), 2))
     for i, p in enumerate(point_cloud):
-        xy = [p * math.sin(angle), 0, p * math.cos(angle)]
-        point_cloud_xy[i] = multmatr(rotation, xy, xyz)
+        xy = [p * math.sin(angle), p * math.cos(angle)]
+        # if i == 0:
+        #     print(xy, multmatr(rotation, xy, xyz))
+        # point_cloud_xy[i] = multmatr(rotation, xy, xyz)
+        point_cloud_xy_main[i] = base_robot2main(xy)
+        point_cloud_xy_robot[i] = np.array(xy)
         angle += 2 * math.pi / HORZ_RES
-    return point_cloud_xy
+    return point_cloud_xy_robot, point_cloud_xy_main
 
 
 # wall from webots config
@@ -147,7 +165,7 @@ walls = [
 ]
 
 
-def draw_point_cloud(pc):
+def draw_point_cloud(pc_r, pc_m):
     """Affiche le nuage de points du lidar"""
     plt.ion()
     # create persistent figure/axes on first call
@@ -158,12 +176,12 @@ def draw_point_cloud(pc):
     else:
         fig, ax = draw_point_cloud.fig_ax
 
-    x = pc[:, 0]
-    y = pc[:, 2]
+    x = pc_r[:, 0]
+    y = pc_r[:, 1]
 
     # Draw point cloud
     ax[0].cla()
-    ax[0].scatter(x, y, s=2)
+    ax[0].scatter(x, y)
     ax[0].set_title("Lidar point cloud")
     ax[0].set_aspect("equal")
 
@@ -186,6 +204,8 @@ def draw_point_cloud(pc):
         rect.set_transform(transform)
         ax[1].add_patch(rect)
 
+    ax[1].scatter(pc_m[:, 0], pc_m[:, 1])
+
     ax[1].set_aspect("equal")
     ax[1].set_xlabel("x (m)")
     ax[1].set_ylabel("y (m)")
@@ -202,10 +222,10 @@ c = 0
 
 while robot.step(timestep) != -1:
     ## Lidar ##
-    point_cloud = get_point_cloud()
+    pc_r, pc_m = get_point_cloud()
     if c == 100:
         # draw_point_cloud(point_cloud)
-        draw_point_cloud(point_cloud)
+        draw_point_cloud(pc_r, pc_m)
         c = 0
     c += 1
 
