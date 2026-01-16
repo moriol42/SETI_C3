@@ -1,7 +1,6 @@
 #VRML_SIM R2025a utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/3e6ea77604ac443d9f36f74e2a17836a017b8915/projects/objects/floors/protos/CircleArena.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/3e6ea77604ac443d9f36f74e2a17836a017b8915/projects/appearances/protos/Roughcast.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/3e6ea77604ac443d9f36f74e2a17836a017b8915/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/3e6ea77604ac443d9f36f74e2a17836a017b8915/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/3e6ea77604ac443d9f36f74e2a17836a017b8915/projects/robots/mobsya/thymio/protos/Thymio2.proto"
@@ -19,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.637377477445308 -0.049022870895325955 -0.7689907082498696 3.357131828568819
-  position 0.7242411765619016 -0.5788627500802682 2.8704090824629502
+  orientation 0.44014886237945616 -0.09710040398714731 -0.8926592241676569 3.6733597133511537
+  position 1.9549420347679956 -1.261577771113696 2.6771348895085376
 }
 TexturedBackground {
 }
@@ -31,23 +30,11 @@ CircleArena {
 Wall {
   translation -0.16 0.23 0
   size 0.01 1 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation 0.05 0.73 0
   name "wall(12)"
   size 0.43 0.01 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation 0.25 0 0
@@ -118,12 +105,6 @@ Wall {
   translation -0.4 -0.27 0
   name "wall(8)"
   size 0.49 0.01 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation -0.16 -0.51 0
@@ -134,34 +115,16 @@ Wall {
   translation 0.46 -0.25 0
   name "wall(15)"
   size 0.43 0.01 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation -0.2 -0.75 0
   name "wall(18)"
   size 0.9 0.01 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation 0.47 0.25 0
   name "wall(14)"
   size 0.4 0.01 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation 0.04 -0.01 0
@@ -172,53 +135,35 @@ Wall {
   translation 0.25 -0.5 0
   name "wall(16)"
   size 0.01 0.5 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation -0.65 -0.5 0
   name "wall(19)"
   size 0.01 0.5 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation 0.27 0.49 0
   name "wall(13)"
   size 0.01 0.48 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 Wall {
   translation 0.67 0 0
   name "wall(6)"
   size 0.01 0.5 0.1
-  appearance Roughcast {
-    colorOverride 0 1 0
-    textureTransform TextureTransform {
-      scale 2.4 1
-    }
-  }
 }
 DEF thymio Thymio2 {
-  hidden position_0_0 7569.520179977818
-  hidden position_0_1 8688.015815122424
-  hidden rotation_1 0.07339435195802069 0.07339441509428717 -0.994598677323487 4.706973099055331
-  hidden rotation_2 0.02931737582241082 0.029317436621465073 -0.999140119995606 4.7115287879596
-  translation 0.14974894716242482 -0.1566336132043245 -2.0067819417442234e-05
-  rotation 0.004752578131400985 0.0012510137089566857 0.9999879239099864 -2.62682098461634
+  hidden position_0_0 7569.615419334922
+  hidden position_0_1 8688.111054470273
+  hidden linearVelocity_0 6.135909487927091e-16 -7.95946896828379e-16 -2.220446049250313e-16
+  hidden angularVelocity_0 -3.184224131268152e-16 -9.322088417501445e-16 1.1868484696829173e-16
+  hidden rotation_1 0.026027981227806803 0.026028041843173592 -0.9993223129856628 4.71171112126563
+  hidden linearVelocity_1 5.938010700686808e-16 -5.093326952939845e-16 6.937306634813811e-17
+  hidden angularVelocity_1 1.7157768784937626e-15 9.43840947586218e-18 9.00436958741823e-15
+  hidden rotation_2 -0.018281409220578845 -0.01828135120433716 -0.9996657352710723 4.712054719980919
+  hidden linearVelocity_2 -9.409604402172609e-16 8.763220466870059e-16 1.1572554146890388e-17
+  hidden angularVelocity_2 -2.3550279770078765e-15 -2.097134182445226e-15 4.559288369070731e-15
+  translation 0.14907997323525365 -0.15733573369268516 -2.0067819414992805e-05
+  rotation 0.004752579120118649 0.0012414433708939593 0.9999879358322598 -2.6305878717884936
   controller "thymio_variables"
   supervisor TRUE
   bodySlot [
