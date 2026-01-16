@@ -112,52 +112,52 @@ def stop():
 
 while robot.step(timestep) != -1:
     ## Controle auto
-    prox = getProx()
-    for p in prox:
-        print(p)
-    print("\n")
+    # prox = getProx()
+    # for p in prox:
+    #     print(p)
+    # print("\n")
 
-    speed_right = 2
-    speed_left = 2
+    # speed_right = 2
+    # speed_left = 2
 
-    # Si obstacle devant
-    if is_obstacle():
-        rotate(90)
-        for i in range(0, 6):
-            if prox[i] > 0:
-                rotate(180)
-                break
+    # # Si obstacle devant
+    # if is_obstacle():
+    #     rotate(90)
+    #     for i in range(0, 6):
+    #         if prox[i] > 0:
+    #             rotate(180)
+    #             break
 
-    # Si il est trop proche d'un mur (a droite ou a gauche)
-    if prox[0] > 0:
-        rotate(10)
-    if prox[4] > 0:
-        rotate(-10)
+    # # Si il est trop proche d'un mur (a droite ou a gauche)
+    # if prox[0] > 0:
+    #     rotate(10)
+    # if prox[4] > 0:
+    #     rotate(-10)
 
-    motor_left.setVelocity(speed_left)
-    motor_right.setVelocity(speed_right)
+    # motor_left.setVelocity(speed_left)
+    # motor_right.setVelocity(speed_right)
 
     ## Controle clavier ##
-    # command = keyboard.getKey()
-    # if command == keyboard.LEFT:
-    #     # print('Left')
-    #     motor_left.setVelocity(-robot_speed)
-    #     motor_right.setVelocity(robot_speed)
-    # elif command == keyboard.RIGHT:
-    #     # print('right')
-    #     motor_left.setVelocity(robot_speed)
-    #     motor_right.setVelocity(-robot_speed)
-    # else:
-    #     if command == keyboard.UP:
-    #         print("up")
-    #         if robot_speed < 2:
-    #             robot_speed += 0.2
-    #     elif command == keyboard.DOWN:
-    #         print("down")
-    #         if robot_speed > -2:
-    #             robot_speed -= 0.2
-    #     elif command == 83:  # capture S key
-    #         print("stop")
-    #         robot_speed = 0
-    #     motor_left.setVelocity(robot_speed)
-    #     motor_right.setVelocity(robot_speed)
+    command = keyboard.getKey()
+    if command == keyboard.LEFT:
+        # print('Left')
+        motor_left.setVelocity(-robot_speed)
+        motor_right.setVelocity(robot_speed)
+    elif command == keyboard.RIGHT:
+        # print('right')
+        motor_left.setVelocity(robot_speed)
+        motor_right.setVelocity(-robot_speed)
+    else:
+        if command == keyboard.UP:
+            print("up")
+            if robot_speed < 2:
+                robot_speed += 0.2
+        elif command == keyboard.DOWN:
+            print("down")
+            if robot_speed > -2:
+                robot_speed -= 0.2
+        elif command == 83:  # capture S key
+            print("stop")
+            robot_speed = 0
+        motor_left.setVelocity(robot_speed)
+        motor_right.setVelocity(robot_speed)
