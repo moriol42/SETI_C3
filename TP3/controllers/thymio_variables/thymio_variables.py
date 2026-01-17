@@ -168,6 +168,35 @@ walls = [
 ]
 
 
+def walls2points(walls):
+    points = []
+    for w in walls:
+        tx, ty, _ = w["translation"]
+        sx, sy, _ = w["size"]
+        angle = w.get("rotation", 0)
+        if sx >= sy:
+            for i in range(math.floor(sx * 100)):
+                points.append(
+                    np.array(
+                        [
+                            math.cos(angle) * (-sx / 2 + i / 100) + tx,
+                            math.sin(angle) * (-sx / 2 + i / 100) + ty,
+                        ]
+                    )
+                )
+        else:
+            for i in range(math.floor(sy * 100)):
+                points.append(
+                    np.array(
+                        [
+                            -math.sin(angle) * (-sy / 2 + i / 100) + tx,
+                            math.cos(angle) * (-sy / 2 + i / 100) + ty,
+                        ]
+                    )
+                )
+    return np.array(points)
+
+
 def draw_point_cloud(pc_odo, pc_simu):
     """Affiche le nuage de points du lidar"""
     plt.ion()
