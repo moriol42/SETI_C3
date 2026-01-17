@@ -26,6 +26,7 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.transforms import Affine2D
+from scipy.spatial import KDTree
 
 from controller import Supervisor
 import numpy as np
@@ -37,8 +38,8 @@ keyboard = robot.getKeyboard()
 keyboard.enable(timestep)
 robot_speed = 0.0
 MAX_SPEED = 8
-e = 54  # mm
-wheel_radius = 21  # mm
+e = 0.054  # m
+wheel_radius = 0.021  # m
 
 lidar = robot.getDevice("lidar")
 lidar.enable(timestep)
@@ -54,47 +55,49 @@ motor_right = robot.getDevice("motor.right")
 motor_left.setPosition(float("inf"))
 motor_right.setPosition(float("inf"))
 
-
-def multmatr(X, Y, T):
-    res = np.array(
-        [
-            X[0] * Y[0] + X[3] * Y[1] + X[6] * Y[2] - T[0],
-            X[1] * Y[0] + X[4] * Y[1] + X[7] * Y[2] + T[1],
-            X[2] * Y[0] + X[5] * Y[1] + X[8] * Y[2] + T[2],
-        ]
-    )
-    return res
+pos0 = node.getPosition()
+rot0 = node.getOrientation()
+Xk = [pos0[0], pos0[1], math.atan2(rot0[3], rot0[0])]
+print(Xk)
 
 
-def base_robot2main(p):
-    """Changement de base du robot vers la base principal de la scene"""
-    xyz = node.getPosition()
+def pos_robot():
+    """Return the exact position of the robot using the simulator values"""
+    x, y, _ = node.getPosition()
     rotation = node.getOrientation()
     theta = -math.atan2(rotation[3], rotation[0]) + math.pi / 2
+    return x, y, theta
+
+
+def base_robot2main(p, repere_proj="odo"):
+    """Changement de base du robot vers la base principal de la scene"""
+    if repere_proj == "simu":
+        x, y, theta = pos_robot()
+    elif repere_proj == "odo":
+        x, y, theta = Xk
+        theta = -theta + math.pi / 2
+    else:
+        raise ValueError
     return np.array(
         [
-            math.cos(theta) * p[0] + math.sin(theta) * p[1] + xyz[0],
-            -math.sin(theta) * p[0] + math.cos(theta) * p[1] + xyz[1],
+            math.cos(theta) * p[0] + math.sin(theta) * p[1] + x,
+            -math.sin(theta) * p[0] + math.cos(theta) * p[1] + y,
         ]
     )
 
 
-def get_point_cloud():
+def get_point_cloud(repere_proj="odo"):
     point_cloud = lidar.getRangeImage()
-    # rotation = node.getOrientation()
-    # xyz = node.getPosition()
     angle = math.pi
-    point_cloud_xy_main = np.zeros((len(point_cloud), 2))
-    point_cloud_xy_robot = np.zeros((len(point_cloud), 2))
+    point_cloud_xy = np.zeros((len(point_cloud), 2))
     for i, p in enumerate(point_cloud):
         xy = [p * math.sin(angle), p * math.cos(angle)]
-        # if i == 0:
-        #     print(xy, multmatr(rotation, xy, xyz))
-        # point_cloud_xy[i] = multmatr(rotation, xy, xyz)
-        point_cloud_xy_main[i] = base_robot2main(xy)
-        point_cloud_xy_robot[i] = np.array(xy)
+        if repere_proj is not None:
+            point_cloud_xy[i] = base_robot2main(xy, repere_proj=repere_proj)
+        else:
+            point_cloud_xy[i] = np.array(xy)
         angle += 2 * math.pi / HORZ_RES
-    return point_cloud_xy_robot, point_cloud_xy_main
+    return point_cloud_xy
 
 
 # wall from webots config
@@ -165,7 +168,7 @@ walls = [
 ]
 
 
-def draw_point_cloud(pc_r, pc_m):
+def draw_point_cloud(pc_odo, pc_simu):
     """Affiche le nuage de points du lidar"""
     plt.ion()
     # create persistent figure/axes on first call
@@ -176,8 +179,8 @@ def draw_point_cloud(pc_r, pc_m):
     else:
         fig, ax = draw_point_cloud.fig_ax
 
-    x = pc_r[:, 0]
-    y = pc_r[:, 1]
+    x = pc_odo[:, 0]
+    y = pc_odo[:, 1]
 
     # Draw point cloud
     ax[0].cla()
@@ -204,7 +207,17 @@ def draw_point_cloud(pc_r, pc_m):
         rect.set_transform(transform)
         ax[1].add_patch(rect)
 
-    ax[1].scatter(pc_m[:, 0], pc_m[:, 1])
+    ax[1].scatter(
+        pc_odo[:, 0],
+        pc_odo[:, 1],
+        label="Projection en utilisant les données de l'odométrie",
+    )
+    ax[1].scatter(
+        pc_simu[:, 0],
+        pc_simu[:, 1],
+        label="Projection en utilisant les données du simulateur",
+    )
+    ax[1].legend()
 
     ax[1].set_aspect("equal")
     ax[1].set_xlabel("x (m)")
@@ -218,14 +231,98 @@ def draw_point_cloud(pc_r, pc_m):
     plt.pause(0.01)
 
 
+def angle_principal(theta):
+    while theta > math.pi:
+        theta -= 2 * math.pi
+        return theta
+    while theta <= -math.pi:
+        theta += 2 * math.pi
+        return theta
+    return theta
+
+
+def update_pos():
+    """This function update the compiuted position of the robot it must be called once every step"""
+    dleft = motor_left.getVelocity() * timestep * wheel_radius * 1e-3
+    dright = motor_right.getVelocity() * timestep * wheel_radius * 1e-3
+
+    ds = (dleft + dright) / 2
+    dtheta = (dright - dleft) / (2 * e)
+    Xk[0] += ds * math.cos(Xk[2] + dtheta / 2)
+    Xk[1] += ds * math.sin(Xk[2] + dtheta / 2)
+    Xk[2] = angle_principal(Xk[2] + dtheta)
+    # list_pos_x.append(Xk[0])
+    # list_pos_y.append(Xk[1])
+    # list_theta.append(Xk[2])
+    # print(Xk)
+
+    ## Simulateur
+    # xyz = node.getPosition()
+    # rotation = node.getOrientation()
+    # list_pos_x_sim.append(xyz[0] * 1e3)
+    # list_pos_y_sim.append(xyz[1] * 1e3)
+    # list_theta_sim.append(math.atan2(rotation[3], rotation[0]))
+
+
+def indxtMean(index, arrays):
+    indxSum = np.array([0.0, 0.0, 0.0])
+    for i in range(np.size(index, 0)):
+        indxSum = np.add(
+            indxSum, np.array(arrays[index[i]]), out=indxSum, casting="unsafe"
+        )
+    return indxSum / np.size(index, 0)
+
+
+def indxtfixed(index, arrays):
+    T = []
+    for i in index:
+        T.append(arrays[i])
+    return np.asanyarray(T)
+
+
+def ICPSVD(fixedX, fixedY, movingX, movingY):
+    reqR = np.identity(3)
+    reqT = [0.0, 0.0, 0.0]
+
+    fixedt = []
+    movingt = []
+    for i in range(len(fixedX)):
+        fixedt.append([fixedX[i], fixedY[i], 0])
+    for i in range(len(movingX)):
+        movingt.append([movingX[i], movingY[i], 0])
+    moving = np.asarray(movingt)
+    fixed = np.asarray(fixedt)
+    n = np.size(moving, 0)
+    tree = KDTree(fixed)
+    for i in range(10):
+        distance, index = tree.query(moving)
+        err = np.mean(distance**2)
+
+        com = np.mean(moving, 0)
+        cof = indxtMean(index, fixed)
+        W = np.dot(np.transpose(moving), indxtfixed(index, fixed)) - n * np.outer(
+            com, cof
+        )
+        U, _, V = np.linalg.svd(W, full_matrices=False)
+
+        tempR = np.dot(V.T, U.T)
+        tempT = cof - np.dot(tempR, com)
+
+        moving = (tempR.dot(moving.T)).T
+        moving = np.add(moving, tempT)
+        reqR = np.dot(tempR, reqR)
+        reqT = np.add(np.dot(tempR, reqT), tempT)
+
+
 c = 0
 
 while robot.step(timestep) != -1:
     ## Lidar ##
-    pc_r, pc_m = get_point_cloud()
     if c == 100:
+        pc_odo = get_point_cloud()
+        pc_simu = get_point_cloud(repere_proj="simu")
         # draw_point_cloud(point_cloud)
-        draw_point_cloud(pc_r, pc_m)
+        draw_point_cloud(pc_odo, pc_simu)
         c = 0
     c += 1
 
@@ -255,5 +352,6 @@ while robot.step(timestep) != -1:
         motor_left.setVelocity(robot_speed)
         motor_right.setVelocity(robot_speed)
 
+    update_pos()
     if command == ord("P"):
         print(node.getPosition())
