@@ -102,6 +102,10 @@ def proj_point_cloud(point_cloud, repere_proj="odo", correction=False):
     for i, p in enumerate(point_cloud):
         xy = [p * math.sin(angle), p * math.cos(angle)]
         point_cloud_xy[i] = base_robot2main(xy, repere_proj=repere_proj, correction=correction)
+        if np.isnan(point_cloud_xy[i][0]):
+            point_cloud_xy[i][0] = 0.
+        if np.isnan(point_cloud_xy[i][1]):
+            point_cloud_xy[i][1] = 0.
         angle += 2 * math.pi / HORZ_RES
     return point_cloud_xy
 
@@ -309,13 +313,26 @@ def update_pos():
     # list_pos_y_sim.append(xyz[1] * 1e3)
     # list_theta_sim.append(math.atan2(rotation[3], rotation[0]))
 
+def matRot2angle(rot):
+    signe = 1 if rot[0][1] > 0 else -1
+    if rot[0][0] >= 1.0:
+        return 0
+    elif rot[0][0] <= -1.0:
+        return signe * math.pi
+    else:
+        return signe * math.acos(rot[0][0])
+    
+def angle2matRot(theta):
+    return np.array([
+        np.array([math.cos(theta), math.sin(theta)]),
+        np.array([-math.sin(theta), math.cos(theta)])
+    ])
 
 def apply_corr():
     """Apply the telemetry corrections to the odometry"""
     Xk[0] += corr_T[0]
     Xk[1] += corr_T[1]
-    signe = 1 if corr_R[0][1] > 0 else -1
-    Xk[2] -= signe * math.acos(corr_R[0][0])
+    Xk[2] -= matRot2angle(corr_R)
 
 
 def indxtMean(index, arrays):
@@ -334,15 +351,17 @@ def indxtfixed(index, arrays):
     return np.asanyarray(T)
 
 
-def ICPSVD(fixed, moving):
+def ICPSVD(_fixed, _moving):
     reqR = np.identity(2)
     reqT = [0.0, 0.0]
 
-    moving = np.copy(moving)
-    fixed = np.copy(fixed)
+    # Remove inf and nan
+    moving = np.clip(_moving, -1.0, 1.0)
+    #moving = moving[~np.isnan(moving)]
+    fixed = np.copy(_fixed)
     n = np.size(moving, 0)
     tree = KDTree(fixed)
-    for i in range(10):
+    for i in range(5):
         try:
             distance, index = tree.query(moving)
         except ValueError as e:
@@ -360,57 +379,15 @@ def ICPSVD(fixed, moving):
         U, _, V = np.linalg.svd(W, full_matrices=False)
 
         tempR = np.dot(V.T, U.T)
-        #tempR = U @ V.T
         tempT = cof - np.dot(tempR, com)
 
         moving = (tempR.dot(moving.T)).T
         moving = np.add(moving, tempT)
         reqR = np.dot(tempR, reqR)
-        reqT = np.add(np.dot(tempR, reqT), tempT)
+        reqT = np.dot(tempR, reqT) + tempT
+        #apply_corr()
     return reqR, reqT
 
-def indxtMean_3D(index, arrays):
-    indxSum = np.array([0.0, 0.0, 0.0])
-    for i in range(np.size(index, 0)):
-        indxSum = np.add(
-            indxSum, np.array(arrays[index[i]]), out=indxSum, casting="unsafe"
-        )
-    return indxSum / np.size(index, 0)
-
-def ICPSVD_3D(fixed, moving):
-    reqR = np.identity(3)
-    reqT = [0.0, 0.0, 0.0]
-
-    moving = np.array([np.array([m[0], m[1], 0]) for m in moving])
-    fixed = np.array([np.array([f[0], f[1], 0]) for f in fixed])
-    n = np.size(moving, 0)
-    tree = KDTree(fixed)
-    for i in range(10):
-        try:
-            distance, index = tree.query(moving)
-        except ValueError as e:
-            print("## ValueError ##", e)
-            print(i)
-            print(moving)
-            break
-        # err = np.mean(distance**2)
-
-        com = np.mean(moving, 0)
-        cof = indxtMean_3D(index, fixed)
-        W = np.dot(np.transpose(moving), indxtfixed(index, fixed)) - n * np.outer(
-            com, cof
-        )
-        U, _, V = np.linalg.svd(W, full_matrices=False)
-
-        tempR = np.dot(V.T, U.T)
-        #tempR = U @ V.T
-        tempT = cof - np.dot(tempR, com)
-
-        moving = (tempR.dot(moving.T)).T
-        moving = np.add(moving, tempT)
-        reqR = np.dot(tempR, reqR)
-        reqT = np.add(np.dot(tempR, reqT), tempT)
-    return reqR[:2, :2], reqT[:2]
 
 c = 0
 c_requal = 0
@@ -422,9 +399,10 @@ while robot.step(timestep) != -1:
         draw_point_cloud(point_cloud)
         c = 0
     if c_requal == int(5 / (timestep * 1e-3)):
-        corr_R, corr_T = ICPSVD_3D(walls_points, proj_point_cloud(lidar.getRangeImage(), repere_proj="odo"))
-        print("Rotation", corr_R, "Translation", corr_T)
-        apply_corr()
+        for _ in range(3):
+            corr_R, corr_T = ICPSVD(walls_points, proj_point_cloud(lidar.getRangeImage(), repere_proj="odo"))
+            apply_corr()
+            #print("Rotation", corr_R, "Translation", corr_T)
         c_requal = 0
     c += 1
     c_requal += 1
