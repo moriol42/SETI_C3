@@ -57,11 +57,19 @@ motor_right.setPosition(float("inf"))
 
 pos0 = node.getPosition()
 rot0 = node.getOrientation()
-Xk = [pos0[0], pos0[1], math.atan2(rot0[3], rot0[0]) + math.pi / 16]
+Xk = [pos0[0], pos0[1], math.atan2(rot0[3], rot0[0])]
 print(Xk)
 
 corr_R = np.identity(2)
 corr_T = [0.0, 0.0]
+
+def angle2matRot(theta):
+    return np.array(
+        [
+            np.array([math.cos(theta), math.sin(theta)]),
+            np.array([-math.sin(theta), math.cos(theta)]),
+        ]
+    )
 
 def pos_robot():
     """Return the exact position of the robot using the simulator values"""
@@ -76,8 +84,10 @@ def base_robot2main(p, repere_proj="odo", correction=False):
     # Apply the correction
     proj = p
     if correction:
-        proj = np.dot(corr_R, proj) + corr_T
-    if repere_proj == "simu":
+        proj = np.dot(corr_R.T, proj) + corr_T
+    if repere_proj == None:
+        return proj
+    elif repere_proj == "simu":
         x, y, theta = pos_robot()
     elif repere_proj == "odo":
         x, y, theta = Xk
@@ -92,20 +102,19 @@ def base_robot2main(p, repere_proj="odo", correction=False):
     )
     return proj
 
-def get_point_cloud():
-    pc = lidar.getRangeImage()
-
 
 def proj_point_cloud(point_cloud, repere_proj="odo", correction=False):
     angle = math.pi
     point_cloud_xy = np.zeros((len(point_cloud), 2))
     for i, p in enumerate(point_cloud):
         xy = [p * math.sin(angle), p * math.cos(angle)]
-        point_cloud_xy[i] = base_robot2main(xy, repere_proj=repere_proj, correction=correction)
+        point_cloud_xy[i] = base_robot2main(
+            xy, repere_proj=repere_proj, correction=correction
+        )
         if np.isnan(point_cloud_xy[i][0]):
-            point_cloud_xy[i][0] = 0.
+            point_cloud_xy[i][0] = 0.0
         if np.isnan(point_cloud_xy[i][1]):
-            point_cloud_xy[i][1] = 0.
+            point_cloud_xy[i][1] = 0.0
         angle += 2 * math.pi / HORZ_RES
     return point_cloud_xy
 
@@ -212,8 +221,9 @@ walls_points = walls2points(walls)
 
 def draw_point_cloud(point_cloud):
     """Affiche le nuage de points du lidar"""
-    pc_odo = proj_point_cloud(point_cloud,repere_proj="odo" )
+    pc_odo = proj_point_cloud(point_cloud, repere_proj="odo")
     pc_simu = proj_point_cloud(point_cloud, repere_proj="simu")
+    # pc_tele = proj_point_cloud(point_cloud, repere_proj=None, correction=True)
     # pc_odo_corr = proj_point_cloud(point_cloud, repere_proj="odo", correction=True)
     plt.ion()
     # create persistent figure/axes on first call
@@ -262,6 +272,11 @@ def draw_point_cloud(point_cloud):
         pc_simu[:, 1],
         label="Données simulateur",
     )
+    # ax[1].scatter(
+    #     pc_tele[:, 0],
+    #     pc_tele[:, 1],
+    #     label="Données télémétrie",
+    # )
     # ax[1].scatter(
     #     pc_odo_corr[:, 0],
     #     pc_odo_corr[:, 1],
@@ -313,6 +328,7 @@ def update_pos():
     # list_pos_y_sim.append(xyz[1] * 1e3)
     # list_theta_sim.append(math.atan2(rotation[3], rotation[0]))
 
+
 def matRot2angle(rot):
     signe = 1 if rot[0][1] > 0 else -1
     if rot[0][0] >= 1.0:
@@ -321,12 +337,7 @@ def matRot2angle(rot):
         return signe * math.pi
     else:
         return signe * math.acos(rot[0][0])
-    
-def angle2matRot(theta):
-    return np.array([
-        np.array([math.cos(theta), math.sin(theta)]),
-        np.array([-math.sin(theta), math.cos(theta)])
-    ])
+
 
 def apply_corr():
     """Apply the telemetry corrections to the odometry"""
@@ -355,13 +366,12 @@ def ICPSVD(_fixed, _moving):
     reqR = np.identity(2)
     reqT = [0.0, 0.0]
 
-    # Remove inf and nan
+    # Remove inf
     moving = np.clip(_moving, -1.0, 1.0)
-    #moving = moving[~np.isnan(moving)]
     fixed = np.copy(_fixed)
     n = np.size(moving, 0)
     tree = KDTree(fixed)
-    for i in range(5):
+    for i in range(10):
         try:
             distance, index = tree.query(moving)
         except ValueError as e:
@@ -385,7 +395,6 @@ def ICPSVD(_fixed, _moving):
         moving = np.add(moving, tempT)
         reqR = np.dot(tempR, reqR)
         reqT = np.dot(tempR, reqT) + tempT
-        #apply_corr()
     return reqR, reqT
 
 
@@ -399,10 +408,15 @@ while robot.step(timestep) != -1:
         draw_point_cloud(point_cloud)
         c = 0
     if c_requal == int(5 / (timestep * 1e-3)):
-        for _ in range(3):
-            corr_R, corr_T = ICPSVD(walls_points, proj_point_cloud(lidar.getRangeImage(), repere_proj="odo"))
-            apply_corr()
-            #print("Rotation", corr_R, "Translation", corr_T)
+        corr_R, corr_T = ICPSVD(
+            walls_points, proj_point_cloud(lidar.getRangeImage(), repere_proj="odo")
+        )
+        # corr_R, corr_T = ICPSVD(
+        #     walls_points, proj_point_cloud(lidar.getRangeImage(), repere_proj=None)
+        # )
+        apply_corr()
+        print("Rotation", corr_R, "Translation", corr_T)
+        # print(pos_robot())
         c_requal = 0
     c += 1
     c_requal += 1
