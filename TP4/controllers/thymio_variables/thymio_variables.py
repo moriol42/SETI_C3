@@ -41,6 +41,7 @@ robot_speed = 0.0
 MAX_SPEED = 8
 e = 0.054  # m
 wheel_radius = 0.021  # m
+ROBOT_RADIUS = 0.085
 
 lidar = robot.getDevice("lidar")
 lidar.enable(timestep)
@@ -48,6 +49,7 @@ lidar.enablePointCloud()
 
 HORZ_RES = lidar.getHorizontalResolution()
 THRESHOLD_GAP = 0.1  # 10cm
+THRESHOLD_BUBBLE = 0.1
 BUBBLE_RADIUS = 40
 
 print(chr(27) + "[2J")  # ANSI code for clearing command line
@@ -192,14 +194,14 @@ def draw_point_cloud(point_cloud, best):
         rect.set_transform(transform)
         ax.add_patch(rect)
 
-    is_gap = point_cloud > THRESHOLD_GAP
+    is_bubble = point_cloud < THRESHOLD_BUBBLE
     plt.scatter(
-        pc_simu[is_gap, 0],
-        pc_simu[is_gap, 1],
+        pc_simu[is_bubble, 0],
+        pc_simu[is_bubble, 1],
     )
     plt.scatter(
-        pc_simu[~is_gap, 0],
-        pc_simu[~is_gap, 1],
+        pc_simu[~is_bubble, 0],
+        pc_simu[~is_bubble, 1],
     )
     if best is not None:
         plt.scatter(
@@ -262,14 +264,17 @@ def max_gap(cloud):
 
 
 def add_bubble(cloud, i):
-    for j in range(max(0, i - BUBBLE_RADIUS), min(len(cloud), i + BUBBLE_RADIUS + 1)):
-        cloud[j] = cloud[i]
+    # br = BUBBLE_RADIUS
+    br = int(0.6 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
+    for j in range(max(0, i - br), min(len(cloud), i + br + 1)):
+        cloud[j] = THRESHOLD_BUBBLE
 
 
 def follow_the_gap(cloud):
     # Add bubbles
-    i = np.argmin(cloud)
-    add_bubble(cloud, i)
+    bubbles = np.argwhere(cloud < THRESHOLD_BUBBLE)
+    for [b] in bubbles:
+        add_bubble(cloud, b)
 
     # Find the max-gap
     gap_start, gap_len = max_gap(cloud)
@@ -293,25 +298,26 @@ def rotate_ts(ts, speed=1):
 
 
 def rotate(angle):
-    speed = 1 if angle < 0 else -1
-    rotate_ts(int(abs(angle) * 4.9), speed=speed)
+    speed = 4 if angle < 0 else -4
+    rotate_ts(int(abs(angle) * 1.2), speed=speed)
 
 
 c = 0
-
+speed = 9.53
 
 while robot.step(timestep) != -1:
     ## Lidar ##
     if c == 0:
         point_cloud = np.asarray(lidar.getRangeImage()[90:271])
         theta_rad, best = follow_the_gap(point_cloud)
+        #speed = 9. * math.tanh(point_cloud[best])
         theta = theta_rad * 180 / math.pi
-        print(theta)
-        draw_point_cloud(point_cloud, best)
+        print("theta", theta)
+        # draw_point_cloud(point_cloud, best)
         rotate(theta)
         if theta == 180:
             continue
-        c = 100
+        c = int(50 * math.tanh(point_cloud[best]))
     c -= 1
-    motor_left.setVelocity(2)
-    motor_right.setVelocity(2)
+    motor_left.setVelocity(speed)
+    motor_right.setVelocity(speed)
