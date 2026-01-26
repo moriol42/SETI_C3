@@ -26,10 +26,11 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.transforms import Affine2D
-from scipy.spatial import KDTree
 
 from controller import Supervisor
 import numpy as np
+
+import time
 
 robot = Supervisor()
 node = robot.getFromDef("thymio")
@@ -46,6 +47,8 @@ lidar.enable(timestep)
 lidar.enablePointCloud()
 
 HORZ_RES = lidar.getHorizontalResolution()
+THRESHOLD_GAP = 0.1  # 10cm
+BUBBLE_RADIUS = 40
 
 print(chr(27) + "[2J")  # ANSI code for clearing command line
 print("Initialization of thymio_variables controller")
@@ -78,7 +81,7 @@ def base_robot2main(p):
 
 
 def proj_point_cloud(point_cloud):
-    angle = math.pi
+    angle = -math.pi / 2
     point_cloud_xy = np.zeros((len(point_cloud), 2))
     for i, p in enumerate(point_cloud):
         xy = [p * math.sin(angle), p * math.cos(angle)]
@@ -155,7 +158,11 @@ walls = [
 ]
 
 
-def draw_point_cloud(point_cloud):
+g_best_i = 0
+g_best_len = 0
+
+
+def draw_point_cloud(point_cloud, best):
     """Affiche le nuage de points du lidar"""
     pc_simu = proj_point_cloud(point_cloud)
     plt.ion()
@@ -185,9 +192,36 @@ def draw_point_cloud(point_cloud):
         rect.set_transform(transform)
         ax.add_patch(rect)
 
+    is_gap = point_cloud > THRESHOLD_GAP
     plt.scatter(
-        pc_simu[:, 0],
-        pc_simu[:, 1],
+        pc_simu[is_gap, 0],
+        pc_simu[is_gap, 1],
+    )
+    plt.scatter(
+        pc_simu[~is_gap, 0],
+        pc_simu[~is_gap, 1],
+    )
+    if best is not None:
+        plt.scatter(
+            pc_simu[best, 0],
+            pc_simu[best, 1],
+        )
+
+    # Draw robot position and orientation
+    x, y, theta = pos_robot()
+    arrow_length = 0.1  # meters
+    dx = arrow_length * math.sin(theta)
+    dy = arrow_length * math.cos(theta)
+    ax.arrow(
+        x,
+        y,
+        dx,
+        dy,
+        head_width=0.05,
+        head_length=0.03,
+        fc="green",
+        ec="green",
+        linewidth=2,
     )
 
     ax.set_aspect("equal")
@@ -201,41 +235,83 @@ def draw_point_cloud(point_cloud):
     fig.canvas.draw_idle()
     plt.pause(0.01)
 
+
+def max_gap(cloud):
+    """Returns the start and length of the biggest gap"""
+    best_i = 0
+    best_len = 0
+    curr_i = 0
+    curr_len = 0
+    # is_gap = cloud > THRESHOLD_GAP
+    for i, c in enumerate(cloud):
+        if c > THRESHOLD_GAP:
+            if curr_len == 0:
+                curr_i = i
+                curr_len = 1
+            else:
+                curr_len += 1
+        else:
+            if curr_len > best_len:
+                best_i = curr_i
+                best_len = curr_len
+            curr_len = 0
+    if cloud[-1] > THRESHOLD_GAP and curr_len > best_len:
+        best_i = curr_i
+        best_len = curr_len
+    return best_i, best_len
+
+
+def add_bubble(cloud, i):
+    for j in range(max(0, i - BUBBLE_RADIUS), min(len(cloud), i + BUBBLE_RADIUS + 1)):
+        cloud[j] = cloud[i]
+
+
+def follow_the_gap(cloud):
+    # Add bubbles
+    i = np.argmin(cloud)
+    add_bubble(cloud, i)
+
+    # Find the max-gap
+    gap_start, gap_len = max_gap(cloud)
+
+    # Find the best point
+    if gap_len == 0:
+        return math.pi, None
+    best = gap_start + np.argmax(cloud[gap_start : gap_start + gap_len])
+
+    return math.pi / 2 - 2 * best * math.pi / HORZ_RES, best
+
+
+def rotate_ts(ts, speed=1):
+    """if speed is positive goes right, and left if otherwise"""
+    for _ in range(ts):
+        motor_left.setVelocity(speed)
+        motor_right.setVelocity(-speed)
+        robot.step(timestep)
+    motor_left.setVelocity(0)
+    motor_right.setVelocity(0)
+
+
+def rotate(angle):
+    speed = 1 if angle < 0 else -1
+    rotate_ts(int(abs(angle) * 4.9), speed=speed)
+
+
 c = 0
+
 
 while robot.step(timestep) != -1:
     ## Lidar ##
-    point_cloud = lidar.getRangeImage()
-    if c == 100:
-        draw_point_cloud(point_cloud)
-        c = 0
-    c += 1
-
-    ## Controle clavier ##
-    command = keyboard.getKey()
-    if command == keyboard.LEFT:
-        # print('Left')
-        motor_left.setVelocity(robot_speed - 2)
-        motor_right.setVelocity(robot_speed + 2)
-        if abs(robot_speed) > 3:
-            robot_speed *= 0.99
-    elif command == keyboard.RIGHT:
-        # print('right')
-        motor_left.setVelocity(robot_speed + 2)
-        motor_right.setVelocity(robot_speed - 2)
-        if abs(robot_speed) > 3:
-            robot_speed *= 0.99
-    else:
-        if command == keyboard.UP:
-            if robot_speed < MAX_SPEED:
-                robot_speed += 0.1
-        elif command == keyboard.DOWN:
-            if robot_speed > -2:
-                robot_speed -= 0.1
-        elif command == 83:  # capture S key
-            robot_speed = 0
-        motor_left.setVelocity(robot_speed)
-        motor_right.setVelocity(robot_speed)
-
-    if command == ord("P"):
-        print(node.getPosition())
+    if c == 0:
+        point_cloud = np.asarray(lidar.getRangeImage()[90:271])
+        theta_rad, best = follow_the_gap(point_cloud)
+        theta = theta_rad * 180 / math.pi
+        print(theta)
+        draw_point_cloud(point_cloud, best)
+        rotate(theta)
+        if theta == 180:
+            continue
+        c = 100
+    c -= 1
+    motor_left.setVelocity(2)
+    motor_right.setVelocity(2)
