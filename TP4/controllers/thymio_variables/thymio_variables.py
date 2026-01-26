@@ -265,7 +265,7 @@ def max_gap(cloud):
 
 def add_bubble(cloud, i):
     # br = BUBBLE_RADIUS
-    br = int(0.6 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
+    br = int(0.5 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
     for j in range(max(0, i - br), min(len(cloud), i + br + 1)):
         cloud[j] = THRESHOLD_BUBBLE
 
