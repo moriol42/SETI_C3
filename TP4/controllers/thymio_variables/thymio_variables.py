@@ -314,7 +314,7 @@ def rotate(angle):
 
 
 def compute_diff_speed(theta, ts):
-    return np.clip(20 * theta / (ts * speed), -5, 5)
+    return np.clip(25 * theta / (ts * speed), -5, 5)
 
 
 def wall_ahead(cloud):
@@ -326,27 +326,8 @@ def wall_ahead(cloud):
 
 
 c = 0
-speed = 6  # 9.53
+speed = 8  # 9.53
 diff_speed = 0
-
-# for i in range(5):
-#     motor_left.setVelocity(speed)
-#     motor_right.setVelocity(speed)
-#     robot.step(timestep)
-
-# c = 25
-# theta = 45
-# diff_speed = compute_diff_speed(theta, c)
-# print(diff_speed)
-# motor_left.setVelocity(speed - diff_speed)
-# motor_right.setVelocity(speed + diff_speed)
-# while robot.step(timestep) != -1:
-#     ## Lidar ##
-#     if c == 0:
-#         motor_left.setVelocity(0)
-#         motor_right.setVelocity(0)
-#         exit(0)
-#     c -= 1
 
 
 def update_angle():
@@ -370,10 +351,10 @@ while robot.step(timestep) != -1:
         theta = theta_rad * 180 / math.pi
         print("theta", theta)
         # draw_point_cloud(point_cloud, best)
-        ts = int(100 * math.tanh(point_cloud[best]))
+        ts = int(90 * math.tanh(point_cloud[best]))
         c = ts
         ThetaK = 0
-        if abs(theta) > 40 or wall_ahead(point_cloud):
+        if abs(theta) > 55 or wall_ahead(point_cloud):
             rotate(theta)
             theta = 0
             motor_left.setVelocity(speed)
