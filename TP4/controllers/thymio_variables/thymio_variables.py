@@ -263,37 +263,36 @@ def max_gap(cloud, threshold):
     return best_i, best_len
 
 
-def add_bubble(cloud_copy, cloud, i, threshold):
+def add_bubble(cloud_copy, cloud, i, dist):
     # br = BUBBLE_RADIUS
-    br = int(0.4 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
-    print(br)
+    br = int(0.45 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
     for j in range(max(0, i - br), min(len(cloud_copy), i + br + 1)):
-        cloud_copy[j] = threshold
+        cloud_copy[j] = dist
 
 
 def follow_the_gap(cloud):
     # Add bubbles
-    threshold = THRESHOLD_BUBBLE
+    # threshold = THRESHOLD_BUBBLE
     # threshold = np.clip(np.max(cloud) * 0.3, THRESHOLD_BUBBLE, 0.25) # To avoid infinity
+    # threshold = np.min(cloud) * 1.1
+    threshold = np.percentile(cloud, 5)
 
     bubbles = np.argwhere(cloud < threshold)
     cloud_copy = np.copy(cloud)
     for [b] in bubbles:
         add_bubble(cloud_copy, cloud, b, threshold)
-    print(cloud_copy)
 
     # Find the max-gap
     threshold = max(threshold, THRESHOLD_GAP)
     gap_start, gap_len = max_gap(cloud_copy, threshold)
-    print(gap_start, gap_len)
 
     # Find the best point
     if gap_len == 0:
         return math.pi, None
     # best = gap_start + np.argmax(cloud_copy[gap_start : gap_start + gap_len])
     max_dist = min(1, np.max(cloud_copy[gap_start : gap_start + gap_len]))
-    max_start, max_len = max_gap(cloud_copy, max_dist * 0.9)
-    best = max_start + max_len // 2
+    max_start, max_len = max_gap(cloud_copy[gap_start : gap_start + gap_len], max_dist * 0.9)
+    best = gap_start + max_start + max_len // 2
 
     return math.pi / 2 - 2 * best * math.pi / HORZ_RES, best
 
@@ -326,7 +325,7 @@ def wall_ahead(cloud):
 
 
 c = 0
-speed = 8  # 9.53
+speed = 9
 diff_speed = 0
 
 
@@ -342,14 +341,11 @@ while robot.step(timestep) != -1:
     ## Lidar ##
     if c == 0:
         point_cloud = np.asarray(lidar.getRangeImage()[90:271])
-        print(point_cloud)
         theta_rad, best = follow_the_gap(point_cloud)
         if best is None:
             rotate(180)
             continue
-        # speed = 9. * math.tanh(point_cloud[best])
         theta = theta_rad * 180 / math.pi
-        print("theta", theta)
         # draw_point_cloud(point_cloud, best)
         ts = int(90 * math.tanh(point_cloud[best]))
         c = ts
@@ -361,7 +357,6 @@ while robot.step(timestep) != -1:
             motor_right.setVelocity(speed)
         else:
             diff_speed = compute_diff_speed(theta, ts)
-            print("diff_speed", diff_speed, "\tts", ts)
             motor_left.setVelocity(min(speed - diff_speed, 9.53))
             motor_right.setVelocity(min(speed + diff_speed, 9.53))
     else:
