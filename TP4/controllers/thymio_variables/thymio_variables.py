@@ -273,8 +273,9 @@ def add_bubble(cloud_copy, cloud, i, threshold):
 
 def follow_the_gap(cloud):
     # Add bubbles
-    # threshold = THRESHOLD_BUBBLE
-    threshold = min(np.max(cloud) * 0.25, 0.2) # To avoid infinity
+    threshold = THRESHOLD_BUBBLE
+    # threshold = np.clip(np.max(cloud) * 0.3, THRESHOLD_BUBBLE, 0.25) # To avoid infinity
+
     bubbles = np.argwhere(cloud < threshold)
     cloud_copy = np.copy(cloud)
     for [b] in bubbles:
@@ -289,7 +290,10 @@ def follow_the_gap(cloud):
     # Find the best point
     if gap_len == 0:
         return math.pi, None
-    best = gap_start + np.argmax(cloud_copy[gap_start : gap_start + gap_len])
+    # best = gap_start + np.argmax(cloud_copy[gap_start : gap_start + gap_len])
+    max_dist = min(1, np.max(cloud_copy[gap_start : gap_start + gap_len]))
+    max_start, max_len = max_gap(cloud_copy, max_dist * 0.9)
+    best = max_start + max_len // 2
 
     return math.pi / 2 - 2 * best * math.pi / HORZ_RES, best
 
@@ -369,7 +373,7 @@ while robot.step(timestep) != -1:
         ts = int(100 * math.tanh(point_cloud[best]))
         c = ts
         ThetaK = 0
-        if abs(theta) > 30 or wall_ahead(point_cloud):
+        if abs(theta) > 40 or wall_ahead(point_cloud):
             rotate(theta)
             theta = 0
             motor_left.setVelocity(speed)
