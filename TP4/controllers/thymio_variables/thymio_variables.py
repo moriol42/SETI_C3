@@ -239,15 +239,14 @@ def draw_point_cloud(point_cloud, best):
     plt.pause(0.01)
 
 
-def max_gap(cloud):
+def max_gap(cloud, threshold):
     """Returns the start and length of the biggest gap"""
     best_i = 0
     best_len = 0
     curr_i = 0
     curr_len = 0
-    # is_gap = cloud > THRESHOLD_GAP
     for i, c in enumerate(cloud):
-        if c > THRESHOLD_GAP:
+        if c > threshold:
             if curr_len == 0:
                 curr_i = i
                 curr_len = 1
@@ -258,32 +257,39 @@ def max_gap(cloud):
                 best_i = curr_i
                 best_len = curr_len
             curr_len = 0
-    if cloud[-1] > THRESHOLD_GAP and curr_len > best_len:
+    if cloud[-1] > threshold and curr_len > best_len:
         best_i = curr_i
         best_len = curr_len
     return best_i, best_len
 
 
-def add_bubble(cloud, i):
+def add_bubble(cloud_copy, cloud, i, threshold):
     # br = BUBBLE_RADIUS
-    br = int(0.5 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
-    for j in range(max(0, i - br), min(len(cloud), i + br + 1)):
-        cloud[j] = THRESHOLD_BUBBLE
+    br = int(0.4 * math.atan(ROBOT_RADIUS / cloud[i]) * HORZ_RES / math.pi)
+    print(br)
+    for j in range(max(0, i - br), min(len(cloud_copy), i + br + 1)):
+        cloud_copy[j] = threshold
 
 
 def follow_the_gap(cloud):
     # Add bubbles
-    bubbles = np.argwhere(cloud < THRESHOLD_BUBBLE)
+    # threshold = THRESHOLD_BUBBLE
+    threshold = min(np.max(cloud) * 0.25, 0.2) # To avoid infinity
+    bubbles = np.argwhere(cloud < threshold)
+    cloud_copy = np.copy(cloud)
     for [b] in bubbles:
-        add_bubble(cloud, b)
+        add_bubble(cloud_copy, cloud, b, threshold)
+    print(cloud_copy)
 
     # Find the max-gap
-    gap_start, gap_len = max_gap(cloud)
+    threshold = max(threshold, THRESHOLD_GAP)
+    gap_start, gap_len = max_gap(cloud_copy, threshold)
+    print(gap_start, gap_len)
 
     # Find the best point
     if gap_len == 0:
         return math.pi, None
-    best = gap_start + np.argmax(cloud[gap_start : gap_start + gap_len])
+    best = gap_start + np.argmax(cloud_copy[gap_start : gap_start + gap_len])
 
     return math.pi / 2 - 2 * best * math.pi / HORZ_RES, best
 
@@ -302,14 +308,21 @@ def rotate(angle):
     speed = 4 if angle < 0 else -4
     rotate_ts(int(abs(angle) * 1.2), speed=speed)
 
+
 def compute_diff_speed(theta, ts):
     return np.clip(20 * theta / (ts * speed), -5, 5)
 
+
 def wall_ahead(cloud):
-    return True in (cloud[45:136] < 0.09)
+    return (
+        (True in (cloud[45:136] < 0.09))
+        or (True in (cloud[45:68] < 0.11))
+        or (True in (cloud[113:136] < 0.11))
+    )
+
 
 c = 0
-speed = 6 #9.53
+speed = 6  # 9.53
 diff_speed = 0
 
 # for i in range(5):
@@ -339,13 +352,17 @@ def update_angle():
     dtheta = (dright - dleft) / (2 * e)
     ThetaK += dtheta
 
+
 while robot.step(timestep) != -1:
     ## Lidar ##
     if c == 0:
         point_cloud = np.asarray(lidar.getRangeImage()[90:271])
         print(point_cloud)
         theta_rad, best = follow_the_gap(point_cloud)
-        #speed = 9. * math.tanh(point_cloud[best])
+        if best is None:
+            rotate(180)
+            continue
+        # speed = 9. * math.tanh(point_cloud[best])
         theta = theta_rad * 180 / math.pi
         print("theta", theta)
         # draw_point_cloud(point_cloud, best)
