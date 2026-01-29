@@ -42,6 +42,7 @@ MAX_SPEED = 8
 e = 0.054  # m
 wheel_radius = 0.021  # m
 ROBOT_RADIUS = 0.085
+ThetaK = 0
 
 lidar = robot.getDevice("lidar")
 lidar.enable(timestep)
@@ -301,23 +302,70 @@ def rotate(angle):
     speed = 4 if angle < 0 else -4
     rotate_ts(int(abs(angle) * 1.2), speed=speed)
 
+def compute_diff_speed(theta, ts):
+    return np.clip(20 * theta / (ts * speed), -5, 5)
+
+def wall_ahead(cloud):
+    return True in (cloud[45:136] < 0.09)
 
 c = 0
-speed = 9.53
+speed = 6 #9.53
+diff_speed = 0
+
+# for i in range(5):
+#     motor_left.setVelocity(speed)
+#     motor_right.setVelocity(speed)
+#     robot.step(timestep)
+
+# c = 25
+# theta = 45
+# diff_speed = compute_diff_speed(theta, c)
+# print(diff_speed)
+# motor_left.setVelocity(speed - diff_speed)
+# motor_right.setVelocity(speed + diff_speed)
+# while robot.step(timestep) != -1:
+#     ## Lidar ##
+#     if c == 0:
+#         motor_left.setVelocity(0)
+#         motor_right.setVelocity(0)
+#         exit(0)
+#     c -= 1
+
+
+def update_angle():
+    global ThetaK
+    dleft = motor_left.getVelocity() * timestep * wheel_radius * 1e-3
+    dright = motor_right.getVelocity() * timestep * wheel_radius * 1e-3
+    dtheta = (dright - dleft) / (2 * e)
+    ThetaK += dtheta
 
 while robot.step(timestep) != -1:
     ## Lidar ##
     if c == 0:
         point_cloud = np.asarray(lidar.getRangeImage()[90:271])
+        print(point_cloud)
         theta_rad, best = follow_the_gap(point_cloud)
         #speed = 9. * math.tanh(point_cloud[best])
         theta = theta_rad * 180 / math.pi
         print("theta", theta)
         # draw_point_cloud(point_cloud, best)
-        rotate(theta)
-        if theta == 180:
-            continue
-        c = int(50 * math.tanh(point_cloud[best]))
+        ts = int(100 * math.tanh(point_cloud[best]))
+        c = ts
+        ThetaK = 0
+        if abs(theta) > 30 or wall_ahead(point_cloud):
+            rotate(theta)
+            theta = 0
+            motor_left.setVelocity(speed)
+            motor_right.setVelocity(speed)
+        else:
+            diff_speed = compute_diff_speed(theta, ts)
+            print("diff_speed", diff_speed, "\tts", ts)
+            motor_left.setVelocity(min(speed - diff_speed, 9.53))
+            motor_right.setVelocity(min(speed + diff_speed, 9.53))
+    else:
+        update_angle()
+        err = theta - ThetaK
+        diff_speed = compute_diff_speed(err, ts)
+        motor_left.setVelocity(min(speed - diff_speed, 9.53))
+        motor_right.setVelocity(min(speed + diff_speed, 9.53))
     c -= 1
-    motor_left.setVelocity(speed)
-    motor_right.setVelocity(speed)
