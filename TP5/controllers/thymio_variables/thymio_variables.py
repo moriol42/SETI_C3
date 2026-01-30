@@ -102,7 +102,7 @@ def get_prox_back():
         ]
     )
 
-w_analog = np.array([0, -1])
+w_analog = np.array([0, -1, -0.1])
 
 print("Sampling period : ", timestep, "ms")
 
@@ -112,7 +112,7 @@ while robot.step(timestep) != -1:
         distanceVal[i] = distanceSensors[i].getValue() / 4500.0
 
     # Set motors speed :
-    speed = 9 * perceptron(w_analog, np.array([distanceVal[2]]), func_act=math.tanh)
+    speed = 9 * perceptron(w_analog, np.array([distanceVal[2], distanceVal[3]]), func_act=math.tanh)
     
     motor_left.setVelocity(speed)
     motor_right.setVelocity(speed)

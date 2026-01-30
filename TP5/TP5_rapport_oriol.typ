@@ -53,3 +53,5 @@ On utilise la fonction tangente hyperbolique comme fonction d'activation et $w_0
 ```py
 speed = 9 * perceptron(w_analog, np.array([distanceVal[2]]), func_act=math.tanh)
 ```
+
+Si on ajoute $w_3 = 0.1$, on voit l'effet des poids sur la vitesse comme dans la vidéo `Perceptron_analogique.webm`.
