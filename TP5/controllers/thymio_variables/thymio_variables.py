@@ -90,96 +90,32 @@ def step(s):
         return 0
 
 
-def perceptron(w, x):
-    return step(sum(w, x))
+def perceptron(w, x, func_act=step):
+    return func_act(sum(w, x))
 
 
 def get_prox_back():
     return np.array(
         [
             1 if distanceSensors[5].getValue() > 0 else 0,
-            1 if distanceSensors[6].getValue() else 0,
+            1 if distanceSensors[6].getValue() > 0 else 0,
         ]
     )
 
+w_analog = np.array([0, -1])
 
 print("Sampling period : ", timestep, "ms")
 
 while robot.step(timestep) != -1:
-
-    image = camera.getImage()
-    # print(type(image), len(image))
-    img = np.frombuffer(image, np.uint8).reshape(
-        (camera.getHeight(), camera.getWidth(), 4)
-    )
-
-    frame = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-
-    # Now you can process or display:
-    cv2.imshow("Thymio Camera", frame)
-    cv2.waitKey(1)
-
-    points = []
-    point_cloud = lidar.getRangeImage()
-    angle = 0.0
-
-    if button_fwd.getValue():
-        print("Forward button was pressed")
-    led_top.set(0xFFFFFF)
-    led_bottomr.set(0xFFFFFF)
-    led_bottoml.set(0xFFFFFF)
-    led_buttons0.set(0xFFFFFF)
-    # leds.top, leds.bottom.[right-left]
-    # leds.buttons.led[0-3],
-    # leds.circle.led[0-7],
-    # leds.prox.h.led[0-7],
-    # leds.prox.v.led[0-1],
-    # leds.sound,
-    # leds.rc,
-    # leds.temperature.[red-blue]
-
-    # Read the LiDAR sensor, like:
-    for i in point_cloud:
-        time += 1
-        points.append([i * math.sin(angle), i * math.cos(angle), 0.0])
-        angle += 2 * math.pi / lidar.getHorizontalResolution()
-
     # Read the proximity sensors, like:
     for i in list(range(0, 7)):
-        distanceVal[i] = distanceSensors[i].getValue()
+        distanceVal[i] = distanceSensors[i].getValue() / 4500.0
 
     # Set motors speed :
-    motor_left.setVelocity(robot_speed)
-    motor_right.setVelocity(robot_speed)
+    speed = 9 * perceptron(w_analog, np.array([distanceVal[2]]), func_act=math.tanh)
+    
+    motor_left.setVelocity(speed)
+    motor_right.setVelocity(speed)
 
-    # Process sensor data here
-
-    # Enter here functions to send actuator commands, like:
-    command = keyboard.getKey()
-    # print(command)
-
-    if command == keyboard.LEFT:
-        # print('Left')
-        motor_left.setVelocity(0.0)  # -robot_speed
-        motor_right.setVelocity(robot_speed)
-    elif command == keyboard.RIGHT:
-        # print('right')
-        motor_left.setVelocity(robot_speed)
-        motor_right.setVelocity(0.0)  # -robot_speed
-    elif command == keyboard.UP:
-        print("up")
-        if robot_speed < 2:
-            robot_speed += 0.2
-    elif command == keyboard.DOWN:
-        print("down")
-        if robot_speed > -2:
-            robot_speed -= 0.2
-    elif command == 83:  # capture S key
-        print("stop")
-        robot_speed = 0
-
-    robot_speed = 2 * perceptron(
-        w_and, get_prox_back()
-    )
 
 # Enter here exit cleanup code
