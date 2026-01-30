@@ -76,6 +76,32 @@ led_bottomr = robot.getDevice("leds.bottom.right")
 led_bottoml = robot.getDevice("leds.bottom.left")
 led_buttons0 = robot.getDevice("leds.buttons.led2")
 
+w_and = np.array([-1.5, 1, 1])
+
+
+def sum(w, x):
+    return w.T @ np.concatenate(([1], x))
+
+
+def step(s):
+    if s >= 0:
+        return 1
+    else:
+        return 0
+
+
+def perceptron(w, x):
+    return step(sum(w, x))
+
+
+def get_prox_back():
+    return np.array(
+        [
+            1 if distanceSensors[5].getValue() > 0 else 0,
+            1 if distanceSensors[6].getValue() else 0,
+        ]
+    )
+
 
 print("Sampling period : ", timestep, "ms")
 
@@ -151,5 +177,9 @@ while robot.step(timestep) != -1:
     elif command == 83:  # capture S key
         print("stop")
         robot_speed = 0
+
+    robot_speed = 2 * perceptron(
+        w_and, get_prox_back()
+    )
 
 # Enter here exit cleanup code
