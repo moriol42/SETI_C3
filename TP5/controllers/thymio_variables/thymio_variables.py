@@ -78,6 +78,11 @@ led_buttons0 = robot.getDevice("leds.buttons.led2")
 
 w_and = np.array([-1.5, 1, 1])
 
+w_back = 2
+w_fwd = 1
+w_pos = 1.2
+w_neg = 1.3
+
 
 def sum(w, x):
     return w.T @ np.concatenate(([1], x))
@@ -94,14 +99,6 @@ def perceptron(w, x, func_act=step):
     return func_act(sum(w, x))
 
 
-def get_prox_back():
-    return np.array(
-        [
-            1 if distanceSensors[5].getValue() > 0 else 0,
-            1 if distanceSensors[6].getValue() > 0 else 0,
-        ]
-    )
-
 w_analog = np.array([0, -1, -0.1])
 
 print("Sampling period : ", timestep, "ms")
@@ -112,10 +109,20 @@ while robot.step(timestep) != -1:
         distanceVal[i] = distanceSensors[i].getValue() / 4500.0
 
     # Set motors speed :
-    speed = 9 * perceptron(w_analog, np.array([distanceVal[2], distanceVal[3]]), func_act=math.tanh)
-    
-    motor_left.setVelocity(speed)
-    motor_right.setVelocity(speed)
+    dist = np.array([distanceVal[0], distanceVal[2], distanceVal[4]])
+    speed_r = 5 * perceptron(
+        np.array([w_fwd, -w_neg, -w_back, w_pos]),
+        dist,
+        func_act=math.tanh,
+    )
+    speed_l = 5 * perceptron(
+        np.array([w_fwd, w_pos, -w_back, -w_neg]),
+        dist,
+        func_act=math.tanh,
+    )
+
+    motor_left.setVelocity(speed_l)
+    motor_right.setVelocity(speed_r)
 
 
 # Enter here exit cleanup code
