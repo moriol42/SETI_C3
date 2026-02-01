@@ -35,7 +35,7 @@ def get_prox_back():
     return np.array(
         [
             1 if distanceSensors[5].getValue() > 0 else 0,
-            1 if distanceSensors[6].getValue() else 0,
+            1 if distanceSensors[6].getValue() > 0 else 0,
         ]
     )
 
