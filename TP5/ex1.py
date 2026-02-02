@@ -15,8 +15,6 @@ def perceptron(w, x):
     return step(sum(w, x))
 
 def test_table(w, t):
-    n = len(w) - 1
-    
     for x, res in t:
         pred = perceptron(w, x)
         if pred != res:

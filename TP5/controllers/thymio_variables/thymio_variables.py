@@ -81,7 +81,7 @@ w_and = np.array([-1.5, 1, 1])
 w_evitement_obstacle = [2, 1, 1.2, 1.3]
 w_suivi = [1.5, 1, -0.5, -1]
 
-w_back, w_fwd, w_pos, w_neg = w_suivi
+w_back, w_fwd, w_pos, w_neg = w_evitement_obstacle
 
 
 def sum(w, x):
