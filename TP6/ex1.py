@@ -1,22 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-x = np.array([1, 0])
-
-
-def sum(w, x):
-    return w.T @ np.concatenate(([1], x))
-
-
-def step(s):
-    if s >= 0:
-        return 1
-    else:
-        return 0
-
 
 def perceptron(w, x):
-    return np.clip(sum(w, x), -1, 1)
+    return np.clip(w.T @ x, -1, 1)
 
 
 def test_table(w, t):
@@ -28,25 +15,39 @@ def test_table(w, t):
     print("test passed")
     return True
 
-
 list_x = np.arange(-2, 2.2, 0.2, dtype=float)
+layer_1_out = [[], []]
 
-list_w = np.arange(-1, 1, 1 / 15, dtype=float)
-list_y = []
+def mlp(weights, x):
+    """
+    weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
+    N
+    """
+    out = x
+    for j,layer in enumerate(weights):
+        tmp = np.zeros(len(layer))
+        for i, neuron in enumerate(layer):
+            tmp[i] = perceptron(neuron, out)
+            if j == 0:
+                layer_1_out[i].append(tmp[i])
+        out = tmp
+    return out
 
-for w in list_w:
-    w1 = np.array([0, w])
 
-    list_y.append(np.array([perceptron(w1, [x]) for x in list_x]))
+weights_q3 = [[np.array([1]), np.array([0.5])], [np.array([1, -1])]]
+list_out = []
+
+for x in list_x:
+    list_out.append(mlp(weights_q3, [x]))
 
 # Plot the graph
 plt.figure(figsize=(10, 6))
-colors = plt.cm.viridis(np.linspace(0, 1, len(list_y)))
-for i in range(len(list_y)):
-    plt.plot(list_x, list_y[i], linewidth=2, label=f"w = {list_w[i]:.2f}", color=colors[i])
+plt.plot(list_x, layer_1_out[0], linewidth=2, label=f"Sortie couche d'entrée 1")
+plt.plot(list_x, layer_1_out[1], linewidth=2, label=f"Sortie couche d'entrée 2")
+plt.plot(list_x, list_out, linewidth=2, label=f"Sortie couche de sortie")
 plt.xlabel("x")
 plt.ylabel("Perceptron output")
-plt.title("Output for $w \in [-1, 1]$")
+plt.title("Sortie des différentes couches")
 plt.legend()
 plt.grid(True)
 plt.show()
