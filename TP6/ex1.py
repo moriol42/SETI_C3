@@ -21,15 +21,12 @@ layer_1_out = [[], []]
 def mlp(weights, x):
     """
     weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
-    N
     """
     out = x
-    for j,layer in enumerate(weights):
+    for layer in weights:
         tmp = np.zeros(len(layer))
         for i, neuron in enumerate(layer):
             tmp[i] = perceptron(neuron, out)
-            if j == 0:
-                layer_1_out[i].append(tmp[i])
         out = tmp
     return out
 

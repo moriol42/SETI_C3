@@ -76,17 +76,6 @@ led_bottomr = robot.getDevice("leds.bottom.right")
 led_bottoml = robot.getDevice("leds.bottom.left")
 led_buttons0 = robot.getDevice("leds.buttons.led2")
 
-w_and = np.array([-1.5, 1, 1])
-
-w_evitement_obstacle = [2, 1, 1.2, 1.3]
-w_suivi = [1.5, 1, -0.5, -1]
-
-w_back, w_fwd, w_pos, w_neg = w_evitement_obstacle
-
-
-def sum(w, x):
-    return w.T @ np.concatenate(([1], x))
-
 
 def step(s):
     if s >= 0:
@@ -95,11 +84,33 @@ def step(s):
         return 0
 
 
-def perceptron(w, x, func_act=step):
-    return func_act(sum(w, x))
+def clip(x):
+    return np.clip(x, -1, 1)
 
 
-w_analog = np.array([0, -1, -0.1])
+def perceptron(w, x, func_act=clip):
+    return func_act(w.T @ x)
+
+
+def mlp(weights, x):
+    """
+    weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
+    """
+    out = x
+    for layer in weights:
+        tmp = np.ones(len(layer))
+        for i, neuron in enumerate(layer):
+            tmp[i] = perceptron(neuron, out)
+        out = tmp
+    if len(out) == 1:
+        return out[0]
+    return out
+
+
+weights_q4 = [
+    [np.array([1, 0]), np.array([0, 1])],
+    [np.array([0.2, -1]), np.array([-1, 0.2])],
+]
 
 print("Sampling period : ", timestep, "ms")
 
@@ -109,18 +120,9 @@ while robot.step(timestep) != -1:
         distanceVal[i] = distanceSensors[i].getValue() / 4500.0
 
     # Set motors speed :
-    dist = np.array([distanceVal[0], distanceVal[2], distanceVal[4]])
-    speed_r = 5 * perceptron(
-        np.array([w_fwd, -w_neg, -w_back, w_pos]),
-        dist,
-        func_act=math.tanh,
-    )
-    speed_l = 5 * perceptron(
-        np.array([w_fwd, w_pos, -w_back, -w_neg]),
-        dist,
-        func_act=math.tanh,
-    )
+    dist = np.array([distanceVal[1], distanceVal[3]])
+
+    [speed_l, speed_r] = mlp(weights_q4, [distanceVal[1], distanceVal[3]])
 
     motor_left.setVelocity(speed_l)
     motor_right.setVelocity(speed_r)
-
