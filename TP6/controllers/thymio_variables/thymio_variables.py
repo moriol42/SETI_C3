@@ -85,7 +85,7 @@ def step(s):
 
 
 def clip(x):
-    return np.clip(x, -1, 1)
+    return np.clip(x, 0, 1)
 
 
 def perceptron(w, x, func_act=clip):
@@ -98,7 +98,7 @@ def mlp(weights, x):
     """
     out = x
     for layer in weights:
-        tmp = np.ones(len(layer))
+        tmp = np.zeros(len(layer))
         for i, neuron in enumerate(layer):
             tmp[i] = perceptron(neuron, out)
         out = tmp
@@ -107,10 +107,34 @@ def mlp(weights, x):
     return out
 
 
+def mlp_rec(weights, memory, x):
+    """
+    weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
+    """
+    out = np.concatenate(([1], x, [1]))
+    for j, layer in enumerate(weights):
+        tmp = np.ones(len(layer) + 2)
+        for i, neuron in enumerate(layer):
+            out[-1] = memory[j][i]
+            res = perceptron(neuron, out)
+            memory[j][i] = res
+            tmp[i + 1] = res
+        out = tmp
+    if len(out) == 3:
+        return out[1]
+    return out[1:-1]
+
+
 weights_q4 = [
     [np.array([1, 0]), np.array([0, 1])],
     [np.array([0.2, -1]), np.array([-1, 0.2])],
 ]
+
+weights_q6 = [[np.array([1, -1.3, -2, 1.2, 0]), np.array([1, 1.2, -2, -1.3, 0])]]
+
+weights_q6_mem = [[np.array([1, -1.3, -2, 1.2, 1]), np.array([1, 1.2, -2, -1.3, 1])]]
+
+memory_q6 = np.zeros((1, 2))
 
 print("Sampling period : ", timestep, "ms")
 
@@ -119,10 +143,9 @@ while robot.step(timestep) != -1:
     for i in list(range(0, 7)):
         distanceVal[i] = distanceSensors[i].getValue() / 4500.0
 
-    # Set motors speed :
-    dist = np.array([distanceVal[1], distanceVal[3]])
+    dist = np.array([distanceVal[0], distanceVal[2], distanceVal[4]])
 
-    [speed_l, speed_r] = mlp(weights_q4, [distanceVal[1], distanceVal[3]])
+    [speed_r, speed_l] = mlp_rec(weights_q6_mem, memory_q6, dist)
 
-    motor_left.setVelocity(speed_l)
-    motor_right.setVelocity(speed_r)
+    motor_left.setVelocity(5 * speed_l)
+    motor_right.setVelocity(5 * speed_r)
