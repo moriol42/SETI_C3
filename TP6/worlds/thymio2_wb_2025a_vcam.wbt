@@ -1,0 +1,283 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/CircleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/apartment_structure/protos/Wall.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/appearances/protos/Roughcast.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/mobsya/thymio/protos/Thymio2.proto"
+
+WorldInfo {
+  basicTimeStep 10
+  contactProperties [
+    ContactProperties {
+      material2 "thymio body"
+      coulombFriction [
+        0.7
+      ]
+    }
+  ]
+}
+Viewpoint {
+  orientation -0.5715671262201595 0.5773116005405012 0.5831143422226839 2.077050913413074
+  position -0.012939632533517813 -0.3283286374436021 4.117184200330484
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+CircleArena {
+}
+Wall {
+  translation -0.16 0.23 0
+  size 0.01 1 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.05 0.73 0
+  name "wall(12)"
+  size 0.43 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.25 0 0
+  name "wall(5)"
+  size 0.4 0.01 0.1
+}
+Wall {
+  translation 0.0944379 -0.0600004 0
+  rotation 0 0 1 0.785398
+  name "wall(1)"
+  size 0.15 0.01 0.1
+}
+Wall {
+  translation 0.617692 -0.201421 0
+  rotation 0 0 1 0.785398
+  name "wall(21)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.0944379 0.0531382 0
+  rotation 0 0 1 2.35619
+  name "wall(11)"
+  size 0.15 0.01 0.1
+}
+Wall {
+  translation 0.617692 0.194558 0
+  rotation 0 0 1 2.35619
+  name "wall(22)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.207574 0.675386 0
+  rotation 0 0 1 2.35619
+  name "wall(20)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.103552 0.675386 0
+  rotation 0 0 1 0.785398
+  name "wall(10)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.193432 -0.696391 0
+  rotation 0 0 1 -2.3561953071795863
+  name "wall(2)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.0116281 -0.448906 0
+  rotation 0 0 1 -2.3561953071795863
+  name "wall(4)"
+  size 0.15 0.01 0.1
+}
+Wall {
+  translation -0.598522 -0.328699 0
+  rotation 0 0 1 -2.3561953071795863
+  name "wall(9)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.598522 -0.696391 0
+  rotation 0 0 1 2.35619
+  name "wall(3)"
+  size 0.15 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.4 -0.27 0
+  name "wall(8)"
+  size 0.49 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.16 -0.51 0
+  name "wall(7)"
+  size 0.4 0.01 0.1
+}
+Wall {
+  translation 0.46 -0.25 0
+  name "wall(15)"
+  size 0.43 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.2 -0.75 0
+  name "wall(18)"
+  size 0.9 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.47 0.25 0
+  name "wall(14)"
+  size 0.4 0.01 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.04 -0.01 0
+  name "wall(17)"
+  size 0.01 1 0.1
+}
+Wall {
+  translation 0.25 -0.5 0
+  name "wall(16)"
+  size 0.01 0.5 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.65 -0.51 0
+  name "wall(19)"
+  size 0.01 0.5 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.27 0.49 0
+  name "wall(13)"
+  size 0.01 0.48 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.67 0 0
+  name "wall(6)"
+  size 0.01 0.5 0.1
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Thymio2 {
+  hidden position_0_0 0.19046105960985812
+  hidden position_0_1 0.19046107795432698
+  hidden translation_1 0 -0.05 0.021
+  hidden rotation_1 0.610659831835347 0.6106598381305766 0.504171728558002 2.2076337090260374
+  hidden translation_2 0 0.05 0.021
+  hidden rotation_2 0.6106598347352711 0.6106598410305012 0.5041717215331443 2.2076337202282676
+  translation -0.0679386 -0.133154 -0.00232629
+  rotation 0.0071220968455290926 0.00040111482234093905 0.9999745570980404 -1.4582953071795863
+  controller "thymio_variables"
+  bodySlot [
+    Display {
+    }
+    Camera {
+      translation 0.05 0 0.07
+      fieldOfView 1.57
+    }
+    Lidar {
+      translation 0 0 0.05
+      horizontalResolution 90
+      fieldOfView 6.28
+      numberOfLayers 1
+      noise 0.001
+      resolution 0.017
+    }
+  ]
+}
