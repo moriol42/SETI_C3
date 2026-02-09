@@ -13,4 +13,6 @@
 
 = La mémoire : les réseaux récurrents
 
+Il a fallu fortement augmenter $w_"pos" "et" w_"neg"$ afin de corriger le mouvement saccadé du robot.
+
 = Le filtre spatial

@@ -108,7 +108,9 @@ def mlp_rec(weights, memory, x):
     """
     out = np.array(x)
     for j, (layer, layer_mem) in enumerate(weights):
-        out = np.clip(layer @ np.concatenate(([1], out)) + np.multiply(layer_mem, memory[j]), -1, 1)
+        out = clip(
+            layer @ np.concatenate(([1], out)) + np.multiply(layer_mem, memory[j])
+        )
         memory[j] = out
     return out
 
@@ -118,9 +120,24 @@ weights_q4 = [
     np.array([[0.2, -1], [-1, 0.2]]),
 ]
 
-weights_q6 = [(np.array([[1, -1.3, -2, 1.2], [1, 1.2, -2, -1.3]]), [0, 0])]
+w_evitement_obstacle = [2, 1, 1.2, 1.3]
+w_back, w_fwd, w_pos, w_neg = w_evitement_obstacle
 
-weights_q6_mem = [(np.array([[1, -1.3, -2, 1.2], [1, 1.2, -2, -1.3]]), [1, 1])]
+weights_q6 = [
+    (
+        np.array([[w_fwd, -w_neg, -w_back, w_pos], [w_fwd, w_pos, -w_back, -w_neg]]),
+        [0, 0],
+    )
+]
+
+w_back, w_fwd, w_pos, w_neg = [2, 1, 3, 2.8]
+w_mem = 1
+weights_q6_mem = [
+    (
+        np.array([[w_fwd, -w_neg, -w_back, w_pos], [w_fwd, w_pos, -w_back, -w_neg]]),
+        [w_mem, w_mem],
+    )
+]
 
 memory_q6 = np.zeros((1, 2))
 
@@ -133,7 +150,7 @@ while robot.step(timestep) != -1:
 
     dist = np.array([distanceVal[0], distanceVal[2], distanceVal[4]])
 
-    [speed_r, speed_l] = mlp_rec(weights_q6, memory_q6, dist)
+    [speed_r, speed_l] = mlp_rec(weights_q6_mem, memory_q6, dist)
 
     motor_left.setVelocity(5 * speed_l)
     motor_right.setVelocity(5 * speed_r)
