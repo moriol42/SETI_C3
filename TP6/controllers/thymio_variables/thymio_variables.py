@@ -96,43 +96,31 @@ def mlp(weights, x):
     """
     weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
     """
-    out = x
+    out = np.asarray([x])
     for layer in weights:
-        tmp = np.zeros(len(layer))
-        for i, neuron in enumerate(layer):
-            tmp[i] = perceptron(neuron, out)
-        out = tmp
-    if len(out) == 1:
-        return out[0]
-    return out
+        out = np.clip(layer @ out, -1, 1)
+    return out[0]
 
 
 def mlp_rec(weights, memory, x):
     """
     weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
     """
-    out = np.concatenate(([1], x, [1]))
-    for j, layer in enumerate(weights):
-        tmp = np.ones(len(layer) + 2)
-        for i, neuron in enumerate(layer):
-            out[-1] = memory[j][i]
-            res = perceptron(neuron, out)
-            memory[j][i] = res
-            tmp[i + 1] = res
-        out = tmp
-    if len(out) == 3:
-        return out[1]
-    return out[1:-1]
+    out = np.array(x)
+    for j, (layer, layer_mem) in enumerate(weights):
+        out = np.clip(layer @ np.concatenate(([1], out)) + np.multiply(layer_mem, memory[j]), -1, 1)
+        memory[j] = out
+    return out
 
 
 weights_q4 = [
-    [np.array([1, 0]), np.array([0, 1])],
-    [np.array([0.2, -1]), np.array([-1, 0.2])],
+    np.array([[1, 0], [0, 1]]),
+    np.array([[0.2, -1], [-1, 0.2]]),
 ]
 
-weights_q6 = [[np.array([1, -1.3, -2, 1.2, 0]), np.array([1, 1.2, -2, -1.3, 0])]]
+weights_q6 = [(np.array([[1, -1.3, -2, 1.2], [1, 1.2, -2, -1.3]]), [0, 0])]
 
-weights_q6_mem = [[np.array([1, -1.3, -2, 1.2, 1]), np.array([1, 1.2, -2, -1.3, 1])]]
+weights_q6_mem = [(np.array([[1, -1.3, -2, 1.2], [1, 1.2, -2, -1.3]]), [1, 1])]
 
 memory_q6 = np.zeros((1, 2))
 
@@ -145,7 +133,7 @@ while robot.step(timestep) != -1:
 
     dist = np.array([distanceVal[0], distanceVal[2], distanceVal[4]])
 
-    [speed_r, speed_l] = mlp_rec(weights_q6_mem, memory_q6, dist)
+    [speed_r, speed_l] = mlp_rec(weights_q6, memory_q6, dist)
 
     motor_left.setVelocity(5 * speed_l)
     motor_right.setVelocity(5 * speed_r)
