@@ -90,13 +90,10 @@ def clip(x):
     return np.clip(x, -1, 1)
 
 
-def perceptron(w, x, func_act=clip):
-    return func_act(w.T @ x)
-
-
 def mlp(weights, x):
     """
-    weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
+    weigths is a 3D-array contaning layers,
+    which are matrices containing perceptron weight
     """
     out = np.asarray(x)
     for layer in weights:
@@ -106,7 +103,8 @@ def mlp(weights, x):
 
 def mlp_rec(weights, memory, x):
     """
-    weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
+    weigths is a 3D-array contaning layers,
+    which are matrices containing perceptron weight
     """
     out = np.array(x)
     for j, (layer, layer_mem) in enumerate(weights):
