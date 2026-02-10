@@ -29,6 +29,8 @@ import cv2
 
 from controller import Robot
 
+MAX_SPEED = 9.53
+
 robot = Robot()
 timestep = int(robot.getBasicTimeStep())
 keyboard = robot.getKeyboard()
@@ -85,7 +87,7 @@ def step(s):
 
 
 def clip(x):
-    return np.clip(x, 0, 1)
+    return np.clip(x, -1, 1)
 
 
 def perceptron(w, x, func_act=clip):
@@ -96,10 +98,10 @@ def mlp(weights, x):
     """
     weigths is a 3D-array contaning layers, which are arrays containing perceptron weight
     """
-    out = np.asarray([x])
+    out = np.asarray(x)
     for layer in weights:
-        out = np.clip(layer @ out, -1, 1)
-    return out[0]
+        out = clip(layer @ np.concatenate(([1], out)))
+    return out
 
 
 def mlp_rec(weights, memory, x):
@@ -141,6 +143,44 @@ weights_q6_mem = [
 
 memory_q6 = np.zeros((1, 2))
 
+weights_q7 = [
+    np.array(
+        [
+            [0, 4, -4, 0, 0, 0],
+            [0, -2, 4, -2, 0, 0],
+            [0, 0, -2, 4, -2, 0],
+            [0, 0, 0, -2, 4, -2],
+            [0, 0, 0, 0, -4, 4],
+        ]
+    ),
+]
+
+weights_q8 = [
+    np.array(
+        [
+            [0, 4, -4, 0, 0, 0],
+            [0, -2, 4, -2, 0, 0],
+            [0, 0, -2, 4, -2, 0],
+            [0, 0, 0, -2, 4, -2],
+            [0, 0, 0, 0, -4, 4],
+        ]
+    ),
+    np.array(
+        [
+            [0, 0.4, 0.6, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0.6, 0.4],
+        ]
+    ),
+    np.array(
+        [
+            [0, -2.5, -0.2, 0],
+            [0, 0, -0.2, -2.5],
+        ]
+    ),
+]
+
+
 print("Sampling period : ", timestep, "ms")
 
 while robot.step(timestep) != -1:
@@ -148,9 +188,9 @@ while robot.step(timestep) != -1:
     for i in list(range(0, 7)):
         distanceVal[i] = distanceSensors[i].getValue() / 4500.0
 
-    dist = np.array([distanceVal[0], distanceVal[2], distanceVal[4]])
+    prox = distanceVal[:5]
 
-    [speed_r, speed_l] = mlp_rec(weights_q6_mem, memory_q6, dist)
+    [speed_l, speed_r] = mlp(weights_q8, prox)
 
     motor_left.setVelocity(5 * speed_l)
     motor_right.setVelocity(5 * speed_r)

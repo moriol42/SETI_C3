@@ -6,6 +6,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/apartment_structure/protos/Wall.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/appearances/protos/Roughcast.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/mobsya/thymio/protos/Thymio2.proto"
+EXTERNPROTO "../protos/OilBarrel.proto"
 
 WorldInfo {
   basicTimeStep 10
@@ -19,8 +20,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.5715671262201595 0.5773116005405012 0.5831143422226839 2.077050913413074
-  position -0.012939632533517813 -0.3283286374436021 4.117184200330484
+  orientation 0.6741937681925498 -0.328675820748743 -0.6613886662057874 4.218622131356921
+  position -0.6343481300929615 -0.589249390851562 1.574496492609545
 }
 TexturedBackground {
 }
@@ -28,8 +29,12 @@ TexturedBackgroundLight {
 }
 CircleArena {
 }
+OilBarrel {
+  translation -0.47 0 0.1
+}
 Wall {
   translation -0.16 0.23 0
+  rotation 1 0 0 3.14159
   size 0.01 1 0.1
   appearance Roughcast {
     colorOverride 1 0 0
@@ -133,7 +138,7 @@ Wall {
   size 0.15 0.01 0.1
 }
 Wall {
-  translation -0.598522 -0.328699 0
+  translation -0.329824 -0.314557 0
   rotation 0 0 1 -2.3561953071795863
   name "wall(9)"
   size 0.15 0.01 0.1
@@ -157,7 +162,8 @@ Wall {
   }
 }
 Wall {
-  translation -0.4 -0.27 0
+  translation 0.0879018 0.684587 0
+  rotation 0 0 1 2.35619
   name "wall(8)"
   size 0.49 0.01 0.1
   appearance Roughcast {
@@ -255,14 +261,18 @@ Wall {
   }
 }
 Thymio2 {
-  hidden position_0_0 0.19046105960985812
-  hidden position_0_1 0.19046107795432698
-  hidden translation_1 0 -0.05 0.021
-  hidden rotation_1 0.610659831835347 0.6106598381305766 0.504171728558002 2.2076337090260374
-  hidden translation_2 0 0.05 0.021
-  hidden rotation_2 0.6106598347352711 0.6106598410305012 0.5041717215331443 2.2076337202282676
-  translation -0.0679386 -0.133154 -0.00232629
-  rotation 0.0071220968455290926 0.00040111482234093905 0.9999745570980404 -1.4582953071795863
+  hidden position_0_0 19.94563633321215
+  hidden position_0_1 12.689974567161444
+  hidden linearVelocity_0 -1.5061336821275973e-06 -6.019834704246163e-07 -1.609606800068164e-07
+  hidden angularVelocity_0 2.6774081134399892e-06 1.3508656960702724e-05 7.448959260438575e-06
+  hidden rotation_1 -0.6969826659219394 -0.696982697157443 -0.16861282059049465 3.4756760189418308
+  hidden linearVelocity_1 -1.41923826631209e-06 -9.139391849906984e-07 3.4969911068728414e-07
+  hidden angularVelocity_1 2.6555107684411347e-06 1.3467892483842275e-05 7.448960470223318e-06
+  hidden rotation_2 0.5997078349225405 0.5997078390545407 0.529812250244416 2.1671685659462474
+  hidden linearVelocity_2 -2.082421978101359e-06 -5.622701713698404e-07 -3.8813008224057043e-08
+  hidden angularVelocity_2 2.6407544158014873e-06 1.3440062911454451e-05 7.448959044861121e-06
+  translation -0.60407212909896 -0.04122948585625547 -2.1833511103859504e-05
+  rotation -0.004736362818122882 -0.01942881338313615 -0.9998000240436975 0.4876413077947833
   controller "thymio_variables"
   bodySlot [
     Display {

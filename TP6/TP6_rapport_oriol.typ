@@ -16,3 +16,13 @@
 Il a fallu fortement augmenter $w_"pos" "et" w_"neg"$ afin de corriger le mouvement saccadé du robot.
 
 = Le filtre spatial
+
+Face mur:
+
+[0.         0.35918304 0.5801218  0.28842237 0.        ]
+
+Obstacle 1:
+[0.         0.         1.         0.63760097 0.        ]
+
+Obstacle 2:
+[0.         0.         0.         0.92362892 0.        ]
