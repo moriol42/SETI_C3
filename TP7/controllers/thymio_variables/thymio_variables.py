@@ -1,0 +1,3 @@
+import collecte
+
+collecte.collecte()
