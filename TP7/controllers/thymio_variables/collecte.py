@@ -121,10 +121,10 @@ def collecte():
         for i in list(range(0, 7)):
             distanceVal[i] = distanceSensors[i].getValue()
         prox = [distanceVal[0] / 4500, distanceVal[2] / 4500, distanceVal[4] / 4500]
-        distanceVal = np.sqrt(np.clip(distanceVal, 0, 4500) / 4500)
-        sum = np.sum(distanceVal)
-        distanceVal /= sum + 1e-6
-        storage["prox"].append(distanceVal)
+        distance_norm = np.sqrt(np.clip(distanceVal, 0, 4500) / 4500)
+        s = np.sum(distance_norm)
+        distance_norm /= s + 1e-6
+        storage["prox"].append(distance_norm)
 
         lidar_pt = np.zeros((90, 2))
         for i, d in enumerate(lidar.getRangeImage()):
@@ -164,14 +164,14 @@ def collecte():
             speed_l += 0.1
             speed_r += 0.1
 
+        storage["cmds"].append([speed_l, speed_r])
+
         if command == ord("X"):
             motor_left.setVelocity(0)
             motor_right.setVelocity(0)
             robot.step(timestep)
             break
-
-        storage["cmds"].append([speed_l, speed_r])
-
+        
         motor_left.setVelocity(5 * speed_l)
         motor_right.setVelocity(5 * speed_r)
 
